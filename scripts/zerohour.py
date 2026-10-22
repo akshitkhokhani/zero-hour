@@ -112,6 +112,7 @@ def _group_live_vulns(results, cards_by_id, days):
                                 "danger": None, "commands": []}],
                         safe_versions=["%s %s" % kv for kv in best.items()],
                         cves=sorted({cv for _, c in items for cv in c.get("cves", [])}),
+                        advisory_ids=sorted({x for r, _ in items for x in r.get("advisory_ids", [])}),
                         sources=[s_ for _, c in items for s_ in c.get("sources", [])][:8]))
     return out
 

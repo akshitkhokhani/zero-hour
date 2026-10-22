@@ -82,17 +82,51 @@ for spread → harden**.
 
 ## How it works
 
-1. **Research (your agent, live).** The agent uses its own built-in web search. It looks at
-   what broke in the last 72 hours to 7 days. It searches broadly first, then for your stack. It reads
-   primary sources and cross-checks them, and writes what it learns as an incident card.
-2. **Match (deterministic, live).** `scripts/zerohour.py` parses your lockfiles (including
-   transitive deps), runtimes, images, CI and AI-agent configs. It pulls OSV.dev (incl.
-   `MAL-` malicious packages), GitHub Advisory DB entries published in the window (malware +
-   high/critical), CISA KEV, FIRST EPSS and incident cards, then hunts IOCs read-only.
-3. **Judge and fix (your agent).** The agent checks reachability ("prod or dev only?",
-   "internet-facing?") and explains each verdict in one line. Then it writes the fix plan
-   for your package manager, OS and deployment. It applies only the reversible steps you approve,
-   then re-scans to prove the fix.
+```mermaid
+flowchart TB
+    U([You ask: "am I affected?"]) --> R
+    subgraph LIVE["Live on every run (nothing stored in code)"]
+        R["1. Research — your agent's own web search<br/>last 24 h → 7 days, primary sources"]
+        F["2. Feeds — OSV.dev (incl. MAL- malware), GitHub Advisory DB<br/>(new malware + high/critical), CISA KEV, FIRST EPSS"]
+        C["Community incident cards<br/>downloaded from this repo's main branch"]
+    end
+    R -->|writes| AC["Agent incident cards<br/>(local, reused next run)"]
+    subgraph LOCAL["Your project + machine (read-only)"]
+        I["3. Inventory — lockfiles + transitive deps, images,<br/>runtimes, php.ini, CI, AI-agent configs"]
+        H["4. Hunt — IOC files, git log, agent hooks"]
+    end
+    F --> M
+    C --> M
+    AC --> M
+    I --> M{"5. Match + verdicts<br/>(deterministic Python)"}
+    H --> M
+    M --> V["COMPROMISED · AFFECTED · EXPOSED · UNKNOWN · CLEAR<br/>file:line evidence + safe fix ORDER"]
+    V --> P["6. Fix plan — your agent writes it for your<br/>package manager, OS and deployment"]
+    P -->|you approve each step| X["7. Apply reversible steps, re-scan"]
+```
+
+**What the code fixes:** only the *method*. That means the lockfile parsers, version matching, the IOC hunt and
+the verdict rules. It also means the safe-order rule (contain → rotate → upgrade → hunt → harden) and the safety rules
+(read-only, never print secrets).
+
+**What is live:** every incident. Nobody needs to push code when a new attack happens:
+
+- Your agent researches the last 24 hours to 7 days on each run.
+- The feeds already list new malware and advisories within hours of publication.
+- A community incident card merged into this repo reaches every user on their next run.
+- The three cards in `incidents/` are only seed examples from launch day. They are not the source of truth.
+
+---
+
+## Benchmarks
+
+Measured on 10 popular open-source repos (33,716 locked packages in total: next.js, vscode, supabase, n8n,
+WordPress, LiteLLM, LangChain, Home Assistant, Tauri, Laravel). Full table and method: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
+- **Light:** peak memory **87 MB** or less, and repeat scans use **0.8 s CPU** or less. The process runs at low CPU priority.
+- **Accurate:** compared with Google's osv-scanner on the same commits, zero-hour reports **2,286 of 2,287**
+  lockfile-backed findings (1 missed). It adds incident context that a CVE scanner does not give.
+- **Reproducible:** `python3 bench/run.py <dir-of-clones>` then `python3 bench/report.py`.
 
 ---
 

@@ -141,7 +141,7 @@ npx skills add akshitkhokhani/zero-hour -a codex   # one specific agent
 ```
 
 This uses the open [skills CLI](https://github.com/vercel-labs/skills), which copies the skill
-into each agent's skills folder. `npx zerohour install [args]` runs the same command.
+into each agent's skills folder. `npx @akshitkhokhani/zero-hour install [args]` runs the same command.
 
 ### Claude Code plugin
 
@@ -153,7 +153,7 @@ into each agent's skills folder. `npx zerohour install [args]` runs the same com
 ### Standalone CLI (no agent needed)
 
 ```bash
-npx zerohour scan          # needs Node 18+ and Python 3.9+
+npx @akshitkhokhani/zero-hour scan     # needs Node 18+ and Python 3.9+
 ```
 
 ### git clone
@@ -198,7 +198,7 @@ Or call it directly:
 ### CLI
 
 ```bash
-python3 skills/zero-hour/scripts/zerohour.py scan .                         # or: npx zerohour scan .
+python3 skills/zero-hour/scripts/zerohour.py scan .                         # or: npx @akshitkhokhani/zero-hour scan .
 python3 skills/zero-hour/scripts/zerohour.py scan . --incident litellm      # one incident, package or CVE
 python3 skills/zero-hour/scripts/zerohour.py scan . --deep --format json --out report.json
 python3 skills/zero-hour/scripts/zerohour.py pulse --days 3                 # what is being exploited right now

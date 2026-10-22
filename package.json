@@ -1,5 +1,5 @@
 {
-  "name": "zerohour",
+  "name": "@akshitkhokhani/zero-hour",
   "version": "0.1.0",
   "description": "Today's breach. Your stack. Am I hit, and what do I do right now? Live incident checks (OSV, CISA KEV, EPSS, community incident cards) for your project, as an Agent Skill and a zero-dependency CLI.",
   "bin": {
@@ -40,5 +40,8 @@
     "url": "https://github.com/akshitkhokhani/zero-hour/issues"
   },
   "license": "MIT",
-  "author": "Akshit Khokhani"
+  "author": "Akshit Khokhani",
+  "publishConfig": {
+    "access": "public"
+  }
 }

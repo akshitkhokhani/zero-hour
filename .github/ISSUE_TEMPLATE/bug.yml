@@ -37,7 +37,7 @@ body:
       options:
         - Inside an AI agent (skill)
         - CLI (python3 skills/zero-hour/scripts/zerohour.py)
-        - CLI (npx zerohour)
+        - CLI (npx @akshitkhokhani/zero-hour)
         - CI
     validations:
       required: true

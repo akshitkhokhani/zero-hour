@@ -17,7 +17,7 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CLI = os.path.join(os.path.dirname(HERE), "scripts", "zerohour.py")
+CLI = os.path.join(os.path.dirname(HERE), "skills", "zero-hour", "scripts", "zerohour.py")
 
 
 def scan(repo, deep=False, cold=False):

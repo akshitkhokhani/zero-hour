@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PKG_ROOT = path.resolve(__dirname, '..');
-const SCRIPT = path.join(PKG_ROOT, 'scripts', 'zerohour.py');
+const SCRIPT = path.join(PKG_ROOT, 'skills', 'zero-hour', 'scripts', 'zerohour.py');
 const REPO = 'akshitkhokhani/zero-hour';
 const IS_WIN = process.platform === 'win32';
 

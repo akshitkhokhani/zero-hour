@@ -12,11 +12,11 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INCIDENTS = os.path.join(ROOT, "incidents")
+INCIDENTS = os.path.join(ROOT, "skills", "zero-hour", "incidents")
 INDEX = os.path.join(INCIDENTS, "index.json")
 SKIP = {"index.json", "schema.json"}
 
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
+sys.path.insert(0, os.path.join(ROOT, "skills", "zero-hour", "scripts"))
 from zh_intel import validate_card  # noqa: E402
 
 

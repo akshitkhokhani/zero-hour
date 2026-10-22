@@ -7,10 +7,10 @@
   },
   "files": [
     "bin/",
-    "scripts/*.py",
-    "incidents/*.json",
-    "references/",
-    "SKILL.md",
+    "skills/zero-hour/SKILL.md",
+    "skills/zero-hour/scripts/*.py",
+    "skills/zero-hour/incidents/*.json",
+    "skills/zero-hour/references/",
     "AGENTS.md",
     "README.md",
     "LICENSE"

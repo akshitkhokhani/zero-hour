@@ -17,7 +17,7 @@ OSV_BATCH = "https://api.osv.dev/v1/querybatch"
 OSV_VULN = "https://api.osv.dev/v1/vulns/%s"
 KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss?cve=%s"
-CARDS_BASE = "https://raw.githubusercontent.com/akshitkhokhani/zero-hour/main/incidents/"
+CARDS_BASE = "https://raw.githubusercontent.com/akshitkhokhani/zero-hour/main/skills/zero-hour/incidents/"
 OSV_ECOSYSTEMS = {"npm", "PyPI", "Packagist", "Go", "crates.io", "RubyGems", "Maven", "NuGet",
                   "GitHub Actions"}
 TTL = 3600

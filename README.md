@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Agent Skill](https://img.shields.io/badge/agent-skill-8A2BE2.svg)](https://agentskills.io)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
-[![Python 3.9+ stdlib](https://img.shields.io/badge/python-3.9%2B%20stdlib-3776AB.svg)](scripts/)
+[![Python 3.9+ stdlib](https://img.shields.io/badge/python-3.9%2B%20stdlib-3776AB.svg)](skills/zero-hour/scripts/)
 [![OpenSSF-friendly](https://img.shields.io/badge/OpenSSF-friendly-green.svg)](SECURITY.md)
 
 One skill for every AI coding agent. **The code contains no incident-specific logic.** On
@@ -114,7 +114,7 @@ the verdict rules. It also means the safe-order rule (contain → rotate → upg
 - Your agent researches the last 24 hours to 7 days on each run.
 - The feeds already list new malware and advisories within hours of publication.
 - A community incident card merged into this repo reaches every user on their next run.
-- The three cards in `incidents/` are only seed examples from launch day. They are not the source of truth.
+- The three cards in `skills/zero-hour/incidents/` are only seed examples from launch day. They are not the source of truth.
 
 ---
 
@@ -198,12 +198,12 @@ Or call it directly:
 ### CLI
 
 ```bash
-python3 scripts/zerohour.py scan .                         # or: npx zerohour scan .
-python3 scripts/zerohour.py scan . --incident litellm      # one incident, package or CVE
-python3 scripts/zerohour.py scan . --deep --format json --out report.json
-python3 scripts/zerohour.py pulse --days 3                 # what is being exploited right now
-python3 scripts/zerohour.py inventory .                    # what zero-hour sees in your project
-python3 scripts/zerohour.py card template                  # start a new incident card
+python3 skills/zero-hour/scripts/zerohour.py scan .                         # or: npx zerohour scan .
+python3 skills/zero-hour/scripts/zerohour.py scan . --incident litellm      # one incident, package or CVE
+python3 skills/zero-hour/scripts/zerohour.py scan . --deep --format json --out report.json
+python3 skills/zero-hour/scripts/zerohour.py pulse --days 3                 # what is being exploited right now
+python3 skills/zero-hour/scripts/zerohour.py inventory .                    # what zero-hour sees in your project
+python3 skills/zero-hour/scripts/zerohour.py card template                  # start a new incident card
 ```
 
 Exit codes: `0` nothing affected · `2` affected or compromised · `3` error.
@@ -212,7 +212,7 @@ Exit codes: `0` nothing affected · `2` affected or compromised · `3` error.
 
 ```yaml
 - name: zero-hour
-  run: python3 scripts/zerohour.py scan . --no-host --format sarif --out zero-hour.sarif
+  run: python3 skills/zero-hour/scripts/zerohour.py scan . --no-host --format sarif --out zero-hour.sarif
   # exits 2 when something is affected, which fails the job
 ```
 
@@ -237,7 +237,7 @@ Upload `zero-hour.sarif` with GitHub code scanning to see findings on the PR.
 
 Feeds like OSV tell you *which versions* are bad. They do not tell you *what the payload
 left on disk*, *which config makes you exposed*, or *which fix step is dangerous to run
-first*. That lives in **incident cards**: small JSON files in [`incidents/`](incidents/)
+first*. That lives in **incident cards**: small JSON files in [`incidents/`](skills/zero-hour/incidents/)
 with affected packages, preconditions, IOCs and an ordered remediation list with danger
 flags.
 

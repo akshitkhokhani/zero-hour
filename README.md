@@ -47,7 +47,7 @@ already on disk, and the "rotate now" step can trigger a dead-man switch.
 
 ```text
 ZERO-HOUR · my-app · 2026-10-22 14:59 UTC
-intel: OSV ✓ · CISA KEV ✓ · EPSS ✓ · GitHub advisories ✓ · incident cards 8 (bundled, live-advisories)
+intel: OSV ✓ · CISA KEV ✓ · EPSS – · GitHub advisories ✓ · incident cards 8 (bundled, live-advisories)
 
 🔴 COMPROMISED  LiteLLM 1.107.0 malicious release (PyPI + Docker) steals credentials via cook.pth
    evidence: .venv/lib/python3.12/site-packages/cook.pth contains "import cook"

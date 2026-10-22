@@ -1,0 +1,688 @@
+{
+  "generated": "2026-10-22",
+  "python": "3.10.10",
+  "platform": "darwin",
+  "rows": [
+    {
+      "repo": "BerriAI/litellm",
+      "commit": "f2118fc",
+      "wall_s": 0.45,
+      "cpu_s": 0.31,
+      "peak_rss_mb": 48.5,
+      "exit": 2,
+      "cold": {
+        "wall_s": 14.86,
+        "cpu_s": 1.13,
+        "peak_rss_mb": 60.2,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 4.38,
+        "cpu_s": 3.99,
+        "peak_rss_mb": 85.0,
+        "exit": 2
+      },
+      "files": 70,
+      "packages": 2779,
+      "images": 44,
+      "runtimes": 6,
+      "summary": {
+        "compromised": 0,
+        "affected": 6,
+        "exposed": 3,
+        "review": 0,
+        "unknown": 5,
+        "clear": 2
+      },
+      "advisories": 95,
+      "kinds": {
+        "malicious": 0,
+        "kev": 2,
+        "epss": 0,
+        "critical": 1,
+        "other": 92
+      },
+      "incidents": [
+        [
+          "exposed",
+          "LiteLLM 1.107.0 malicious release (PyPI + Docker) steals credentials via cook.pth"
+        ],
+        [
+          "affected",
+          "Pillow: 15 new high/critical advisories in the last 7 days (3 critical)"
+        ],
+        [
+          "affected",
+          "pillow: 4 new high/critical advisories in the last 7 days"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: One HTTP request within the default size limit could exhaust server me"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: Experimental tasks were not tied to the session that created them"
+        ],
+        [
+          "unknown",
+          "Claude Agent SDK: Argument Injection via resume Option Allows Arbitrary Command Execution"
+        ],
+        [
+          "exposed",
+          "Microsoft Windows \u2014 Microsoft Windows Command Injection Vulnerability (CISA KEV, added 202"
+        ]
+      ],
+      "hygiene": 0,
+      "unknowns": 4,
+      "osv_scanner": {
+        "total": 129,
+        "same": 83,
+        "as_incident": 2,
+        "requirements_guess": 44,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 12
+      }
+    },
+    {
+      "repo": "WordPress/wordpress-develop",
+      "commit": "e29e51d",
+      "wall_s": 0.25,
+      "cpu_s": 0.25,
+      "peak_rss_mb": 46.5,
+      "exit": 2,
+      "cold": {
+        "wall_s": 16.9,
+        "cpu_s": 1.53,
+        "peak_rss_mb": 67.1,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 3.37,
+        "cpu_s": 3.06,
+        "peak_rss_mb": 53.2,
+        "exit": 2
+      },
+      "files": 53,
+      "packages": 4990,
+      "images": 4,
+      "runtimes": 7,
+      "summary": {
+        "compromised": 0,
+        "affected": 3,
+        "exposed": 8,
+        "review": 0,
+        "unknown": 3,
+        "clear": 2
+      },
+      "advisories": 306,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 0,
+        "critical": 8,
+        "other": 298
+      },
+      "incidents": [
+        [
+          "unknown",
+          "php2shell: pre-auth RCE in the PHP engine (CVE-2026-109618, CVE-2026-109619)"
+        ],
+        [
+          "affected",
+          "launch-editor: `fs.existsSync()` existence check can be bypassed on Windows"
+        ],
+        [
+          "affected",
+          "follow-redirects: 2 new high/critical advisories in the last 7 days"
+        ],
+        [
+          "affected",
+          "markdown-it: Quadratic complexity in smartquotes with unmatched closing quotes"
+        ]
+      ],
+      "hygiene": 0,
+      "unknowns": 2,
+      "osv_scanner": {
+        "total": 311,
+        "same": 306,
+        "as_incident": 5,
+        "requirements_guess": 0,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 0
+      }
+    },
+    {
+      "repo": "home-assistant/core",
+      "commit": "eff77ac2",
+      "wall_s": 0.28,
+      "cpu_s": 0.27,
+      "peak_rss_mb": 38.4,
+      "exit": 2,
+      "cold": {
+        "wall_s": 6.43,
+        "cpu_s": 0.67,
+        "peak_rss_mb": 56.3,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 4.44,
+        "cpu_s": 3.83,
+        "peak_rss_mb": 51.7,
+        "exit": 2
+      },
+      "files": 27,
+      "packages": 1313,
+      "images": 2,
+      "runtimes": 2,
+      "summary": {
+        "compromised": 0,
+        "affected": 2,
+        "exposed": 0,
+        "review": 0,
+        "unknown": 5,
+        "clear": 3
+      },
+      "advisories": 9,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 0,
+        "critical": 0,
+        "other": 9
+      },
+      "incidents": [
+        [
+          "affected",
+          "Pillow: 15 new high/critical advisories in the last 7 days (3 critical)"
+        ],
+        [
+          "affected",
+          "pillow: 4 new high/critical advisories in the last 7 days"
+        ],
+        [
+          "unknown",
+          "certifi bundles emSign root CAs with compromised intermediate CA keys"
+        ]
+      ],
+      "hygiene": 0,
+      "unknowns": 4,
+      "osv_scanner": {
+        "total": 96,
+        "same": 9,
+        "as_incident": 21,
+        "requirements_guess": 66,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 0
+      }
+    },
+    {
+      "repo": "langchain-ai/langchain",
+      "commit": "b84fa61",
+      "wall_s": 0.83,
+      "cpu_s": 0.3,
+      "peak_rss_mb": 50.1,
+      "exit": 2,
+      "cold": {
+        "wall_s": 9.96,
+        "cpu_s": 0.66,
+        "peak_rss_mb": 56.4,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 2.68,
+        "cpu_s": 1.31,
+        "peak_rss_mb": 58.0,
+        "exit": 2
+      },
+      "files": 51,
+      "packages": 2438,
+      "images": 1,
+      "runtimes": 1,
+      "summary": {
+        "compromised": 0,
+        "affected": 2,
+        "exposed": 2,
+        "review": 0,
+        "unknown": 1,
+        "clear": 3
+      },
+      "advisories": 20,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 0,
+        "critical": 2,
+        "other": 18
+      },
+      "incidents": [
+        [
+          "affected",
+          "Pillow: 15 new high/critical advisories in the last 7 days (3 critical)"
+        ],
+        [
+          "affected",
+          "pillow: 4 new high/critical advisories in the last 7 days"
+        ]
+      ],
+      "hygiene": 0,
+      "unknowns": 1,
+      "osv_scanner": {
+        "total": 39,
+        "same": 20,
+        "as_incident": 19,
+        "requirements_guess": 0,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 0
+      }
+    },
+    {
+      "repo": "laravel/laravel",
+      "commit": "9ffef3b",
+      "wall_s": 1.01,
+      "cpu_s": 0.13,
+      "peak_rss_mb": 43.2,
+      "exit": 0,
+      "cold": {
+        "wall_s": 6.09,
+        "cpu_s": 0.21,
+        "peak_rss_mb": 44.3,
+        "exit": 0
+      },
+      "deep": {
+        "wall_s": 0.3,
+        "cpu_s": 0.16,
+        "peak_rss_mb": 36.3,
+        "exit": 0
+      },
+      "files": 5,
+      "packages": 0,
+      "images": 0,
+      "runtimes": 0,
+      "summary": {
+        "compromised": 0,
+        "affected": 0,
+        "exposed": 0,
+        "review": 0,
+        "unknown": 2,
+        "clear": 3
+      },
+      "advisories": 0,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 0,
+        "critical": 0,
+        "other": 0
+      },
+      "incidents": [],
+      "hygiene": 0,
+      "unknowns": 2,
+      "osv_scanner": {
+        "error": "no package sources found"
+      }
+    },
+    {
+      "repo": "microsoft/vscode",
+      "commit": "b81f5c08",
+      "wall_s": 2.17,
+      "cpu_s": 0.21,
+      "peak_rss_mb": 47.5,
+      "exit": 2,
+      "cold": {
+        "wall_s": 12.72,
+        "cpu_s": 0.81,
+        "peak_rss_mb": 59.7,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 1.44,
+        "cpu_s": 1.27,
+        "peak_rss_mb": 54.4,
+        "exit": 2
+      },
+      "files": 35,
+      "packages": 3201,
+      "images": 3,
+      "runtimes": 2,
+      "summary": {
+        "compromised": 0,
+        "affected": 4,
+        "exposed": 3,
+        "review": 0,
+        "unknown": 12,
+        "clear": 3
+      },
+      "advisories": 70,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 1,
+        "critical": 2,
+        "other": 67
+      },
+      "incidents": [
+        [
+          "affected",
+          "markdown-it: Quadratic-time rendering of a single multi-line link reference definition wit"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: One HTTP request within the default size limit could exhaust server me"
+        ],
+        [
+          "affected",
+          "launch-editor: `fs.existsSync()` existence check can be bypassed on Windows"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: Experimental tasks were not tied to the session that created them"
+        ]
+      ],
+      "hygiene": 0,
+      "unknowns": 12,
+      "osv_scanner": {
+        "total": 74,
+        "same": 70,
+        "as_incident": 4,
+        "requirements_guess": 0,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 0
+      }
+    },
+    {
+      "repo": "n8n-io/n8n",
+      "commit": "1e66e5df",
+      "wall_s": 0.38,
+      "cpu_s": 0.35,
+      "peak_rss_mb": 42.4,
+      "exit": 2,
+      "cold": {
+        "wall_s": 15.18,
+        "cpu_s": 1.44,
+        "peak_rss_mb": 63.0,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 2.52,
+        "cpu_s": 2.24,
+        "peak_rss_mb": 61.8,
+        "exit": 2
+      },
+      "files": 132,
+      "packages": 3986,
+      "images": 26,
+      "runtimes": 17,
+      "summary": {
+        "compromised": 0,
+        "affected": 5,
+        "exposed": 6,
+        "review": 0,
+        "unknown": 93,
+        "clear": 3
+      },
+      "advisories": 161,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 0,
+        "critical": 6,
+        "other": 155
+      },
+      "incidents": [
+        [
+          "affected",
+          "Storybook: Missing origin validation in Storybook preview allows code injection from malic"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: One HTTP request within the default size limit could exhaust server me"
+        ],
+        [
+          "affected",
+          "aiohttp: 3 new high/critical advisories in the last 7 days"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: Experimental tasks were not tied to the session that created them"
+        ],
+        [
+          "affected",
+          "markdown-it: Quadratic complexity in smartquotes with unmatched closing quotes"
+        ]
+      ],
+      "hygiene": 1,
+      "unknowns": 93,
+      "osv_scanner": {
+        "total": 168,
+        "same": 161,
+        "as_incident": 7,
+        "requirements_guess": 0,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 0
+      }
+    },
+    {
+      "repo": "supabase/supabase",
+      "commit": "8b4be6cd",
+      "wall_s": 1.29,
+      "cpu_s": 0.35,
+      "peak_rss_mb": 45.5,
+      "exit": 2,
+      "cold": {
+        "wall_s": 18.17,
+        "cpu_s": 2.11,
+        "peak_rss_mb": 55.1,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 6.21,
+        "cpu_s": 4.1,
+        "peak_rss_mb": 62.1,
+        "exit": 2
+      },
+      "files": 81,
+      "packages": 3556,
+      "images": 32,
+      "runtimes": 7,
+      "summary": {
+        "compromised": 0,
+        "affected": 11,
+        "exposed": 5,
+        "review": 0,
+        "unknown": 84,
+        "clear": 3
+      },
+      "advisories": 267,
+      "kinds": {
+        "malicious": 0,
+        "kev": 2,
+        "epss": 0,
+        "critical": 5,
+        "other": 260
+      },
+      "incidents": [
+        [
+          "affected",
+          "Pillow: 18 new high/critical advisories in the last 7 days (3 critical)"
+        ],
+        [
+          "affected",
+          "pillow: 4 new high/critical advisories in the last 7 days"
+        ],
+        [
+          "affected",
+          "Sentry-Javascript: Middleware Bypass when using Tunnel route"
+        ],
+        [
+          "affected",
+          "next: 2 new high/critical advisories in the last 7 days (1 critical)"
+        ],
+        [
+          "affected",
+          "markdown-it: Quadratic-time rendering of a single multi-line link reference definition wit"
+        ],
+        [
+          "affected",
+          "MCP  TypeScript server SDK: Shared transport or server instances delivered one HTTP client"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: One HTTP request within the default size limit could exhaust server me"
+        ],
+        [
+          "affected",
+          "launch-editor: `fs.existsSync()` existence check can be bypassed on Windows"
+        ],
+        [
+          "affected",
+          "certifi bundles emSign root CAs with compromised intermediate CA keys"
+        ]
+      ],
+      "hygiene": 2,
+      "unknowns": 84,
+      "osv_scanner": {
+        "total": 313,
+        "same": 267,
+        "as_incident": 45,
+        "requirements_guess": 0,
+        "missed": 1,
+        "missed_examples": [
+          "certifi@2023.7.22 PYSEC-2026-4320 (poetry.lock)"
+        ],
+        "only_zero_hour": 0
+      }
+    },
+    {
+      "repo": "tauri-apps/tauri",
+      "commit": "ba1e205",
+      "wall_s": 0.13,
+      "cpu_s": 0.13,
+      "peak_rss_mb": 37.0,
+      "exit": 0,
+      "cold": {
+        "wall_s": 9.49,
+        "cpu_s": 0.39,
+        "peak_rss_mb": 48.9,
+        "exit": 0
+      },
+      "deep": {
+        "wall_s": 0.61,
+        "cpu_s": 0.54,
+        "peak_rss_mb": 40.9,
+        "exit": 0
+      },
+      "files": 31,
+      "packages": 2042,
+      "images": 2,
+      "runtimes": 0,
+      "summary": {
+        "compromised": 0,
+        "affected": 0,
+        "exposed": 1,
+        "review": 0,
+        "unknown": 32,
+        "clear": 3
+      },
+      "advisories": 14,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 0,
+        "critical": 0,
+        "other": 14
+      },
+      "incidents": [
+        [
+          "exposed",
+          "Microsoft Windows \u2014 Microsoft Windows Command Injection Vulnerability (CISA KEV, added 202"
+        ]
+      ],
+      "hygiene": 0,
+      "unknowns": 32,
+      "osv_scanner": {
+        "total": 14,
+        "same": 14,
+        "as_incident": 0,
+        "requirements_guess": 0,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 0
+      }
+    },
+    {
+      "repo": "vercel/next.js",
+      "commit": "443a9e7a",
+      "wall_s": 0.8,
+      "cpu_s": 0.76,
+      "peak_rss_mb": 60.9,
+      "exit": 2,
+      "cold": {
+        "wall_s": 43.12,
+        "cpu_s": 5.42,
+        "peak_rss_mb": 66.4,
+        "exit": 2
+      },
+      "deep": {
+        "wall_s": 2.07,
+        "cpu_s": 1.8,
+        "peak_rss_mb": 87.4,
+        "exit": 2
+      },
+      "files": 64,
+      "packages": 9411,
+      "images": 31,
+      "runtimes": 17,
+      "summary": {
+        "compromised": 0,
+        "affected": 4,
+        "exposed": 93,
+        "review": 0,
+        "unknown": 593,
+        "clear": 3
+      },
+      "advisories": 1245,
+      "kinds": {
+        "malicious": 0,
+        "kev": 0,
+        "epss": 7,
+        "critical": 86,
+        "other": 1152
+      },
+      "incidents": [
+        [
+          "affected",
+          "next: 2 new high/critical advisories in the last 7 days (1 critical)"
+        ],
+        [
+          "affected",
+          "Storybook: Missing origin validation in Storybook preview allows code injection from malic"
+        ],
+        [
+          "affected",
+          "MCP TypeScript SDK: One HTTP request within the default size limit could exhaust server me"
+        ],
+        [
+          "affected",
+          "launch-editor: `fs.existsSync()` existence check can be bypassed on Windows"
+        ]
+      ],
+      "hygiene": 0,
+      "unknowns": 593,
+      "osv_scanner": {
+        "total": 1253,
+        "same": 1245,
+        "as_incident": 8,
+        "requirements_guess": 0,
+        "missed": 0,
+        "missed_examples": [],
+        "only_zero_hour": 0
+      }
+    }
+  ]
+}

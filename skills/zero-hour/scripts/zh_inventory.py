@@ -15,9 +15,11 @@ from collections import deque
 
 from zh_versions import clean, normalize_name
 
+# Directories that only ever hold downloaded dependencies, caches or compiler output.
+# "build"/"dist" are NOT pruned: real projects keep tooling lockfiles there (e.g. vscode/build).
 PRUNE_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", ".mypy_cache",
-              ".pytest_cache", ".next", ".nuxt", "dist", "build", "target", "vendor", ".gradle",
-              ".idea", ".cache", "coverage", ".terraform", "site-packages"}
+              ".pytest_cache", ".next", ".nuxt", "target", "vendor", ".gradle",
+              ".idea", ".cache", ".terraform", "site-packages", "bower_components", ".yarn"}
 MAX_DEPTH = 6
 MAX_FILES = 300000  # walk ceiling (a big monorepo is ~100k files)
 MAX_CHAIN = 8  # dependency path shown as evidence; bounded so crafted lockfiles can't blow up memory

@@ -2,7 +2,13 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+# one run per branch/PR; a new push cancels the superseded run
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -11,6 +17,7 @@ jobs:
   test:
     name: test (${{ matrix.os }}, py${{ matrix.python }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +38,7 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Unit tests
+        timeout-minutes: 8
         run: python -m unittest discover -s tests -v
 
       - name: Incident card index is up to date

@@ -21,7 +21,7 @@ body:
       label: How to reproduce
       description: Command or prompt, plus a minimal lockfile / config snippet if possible.
       placeholder: |
-        python3 scripts/zerohour.py scan . --incident litellm
+        python3 skills/zero-hour/scripts/zerohour.py scan . --incident litellm
     validations:
       required: true
   - type: input
@@ -36,7 +36,7 @@ body:
       label: How you ran it
       options:
         - Inside an AI agent (skill)
-        - CLI (python3 scripts/zerohour.py)
+        - CLI (python3 skills/zero-hour/scripts/zerohour.py)
         - CLI (npx zerohour)
         - CI
     validations:

@@ -8,14 +8,14 @@ import textwrap
 import unittest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(REPO, "scripts"))
+sys.path.insert(0, os.path.join(REPO, "skills", "zero-hour", "scripts"))
 
 import zh_hunt  # noqa: E402
 import zh_intel  # noqa: E402
 import zh_inventory as I  # noqa: E402
 import zh_versions as V  # noqa: E402
 
-CLI = os.path.join(REPO, "scripts", "zerohour.py")
+CLI = os.path.join(REPO, "skills", "zero-hour", "scripts", "zerohour.py")
 
 
 def scan(path, *extra, cwd=None):
@@ -110,7 +110,7 @@ class NoFalseClear(unittest.TestCase):
 
 class Robustness(unittest.TestCase):
     def test_bad_cards_fail_validation(self):
-        with open(os.path.join(REPO, "incidents", "2026-10-21-php2shell.json")) as fh:
+        with open(os.path.join(REPO, "skills", "zero-hour", "incidents", "2026-10-21-php2shell.json")) as fh:
             base = json.load(fh)
         for mutate in (lambda c: c["remediation"][0].__setitem__("commands", ["rm -rf /"]),
                        lambda c: c["affected"][0].__setitem__("name", 5),

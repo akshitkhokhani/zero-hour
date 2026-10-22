@@ -11,7 +11,7 @@
 
 ### If this adds or changes an incident card
 
-- [ ] `python3 scripts/zerohour.py card validate incidents/<card>.json` passes
+- [ ] `python3 skills/zero-hour/scripts/zerohour.py card validate skills/zero-hour/incidents/<card>.json` passes
 - [ ] Every fact is backed by a linked primary source
 - [ ] IOCs are only ones a cited source reports
 - [ ] Remediation is in safe order (contain / disarm → rotate → upgrade / pin → hunt → harden) with dangerous steps flagged

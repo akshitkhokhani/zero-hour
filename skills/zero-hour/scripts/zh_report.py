@@ -169,6 +169,7 @@ def eval_card(card, inv, hunt_hits):
             "network_iocs": (card.get("iocs") or {}).get("network", []) if level in ("compromised", "affected") else [],
             "safe_versions": ["%s %s" % (a_["name"], a_["safe"]) for a_ in card.get("affected", []) if a_.get("safe")],
             "sources": card.get("sources", []), "origin": card.get("_origin"),
+            "advisory_ids": sorted({card["id"]} | set(card.get("aliases") or []) | set(card.get("cves") or [])),
             "published": card.get("published"), "cves": card.get("cves", [])}
 
 

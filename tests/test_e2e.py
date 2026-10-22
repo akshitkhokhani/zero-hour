@@ -14,7 +14,7 @@ import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CLI = os.path.join(ROOT, "scripts", "zerohour.py")
+CLI = os.path.join(ROOT, "skills", "zero-hour", "scripts", "zerohour.py")
 FIXTURES = os.path.join(ROOT, "fixtures")
 
 LITELLM = "2026-10-21-litellm-1-107-0"

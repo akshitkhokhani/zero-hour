@@ -8,7 +8,7 @@ zero-hour user downloads a merged card on their next run.
 1. Start from the template:
 
    ```bash
-   python3 scripts/zerohour.py card template > incidents/<short-id>.json
+   python3 skills/zero-hour/scripts/zerohour.py card template > skills/zero-hour/incidents/<short-id>.json
    ```
 
 2. Fill it in from **primary sources**:
@@ -21,7 +21,7 @@ zero-hour user downloads a merged card on their next run.
 3. Validate it:
 
    ```bash
-   python3 scripts/zerohour.py card validate incidents/<short-id>.json
+   python3 skills/zero-hour/scripts/zerohour.py card validate skills/zero-hour/incidents/<short-id>.json
    ```
 
 4. Rebuild the card index and run the tests:
@@ -59,7 +59,7 @@ zero-hour user downloads a merged card on their next run.
   node bin/zerohour.js --help
   ```
 
-- `SKILL.md` follows the [Agent Skills spec](https://agentskills.io): `name` and
+- `skills/zero-hour/SKILL.md` follows the [Agent Skills spec](https://agentskills.io): `name` and
   `description` frontmatter only, no vendor-specific tool names, under 500 lines.
 
 ## Don't have time for a PR?

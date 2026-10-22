@@ -12,16 +12,16 @@ Use zero-hour when the user asks one of these:
 - "Is today's incident a problem for my project or machine?"
 - "Do a security incident check."
 
-Then **follow [`./SKILL.md`](./SKILL.md)**. Load a file in [`./references/`](./references/) only when SKILL.md tells you to.
+Then **follow [`skills/zero-hour/SKILL.md`](skills/zero-hour/SKILL.md)**. Load a file in [`skills/zero-hour/references/`](skills/zero-hour/references/) only when SKILL.md tells you to.
 
 ## Quick commands
 
 Python 3.9+, standard library only, read-only:
 
 ```bash
-python3 scripts/zerohour.py scan .                      # verdicts + safe fix order for this project (you build the exact fix)
-python3 scripts/zerohour.py scan . --incident litellm   # one incident, package or CVE
-python3 scripts/zerohour.py pulse --days 7              # what attackers exploit right now
+python3 skills/zero-hour/scripts/zerohour.py scan .                      # verdicts + safe fix order for this project (you build the exact fix)
+python3 skills/zero-hour/scripts/zerohour.py scan . --incident litellm   # one incident, package or CVE
+python3 skills/zero-hour/scripts/zerohour.py pulse --days 7              # what attackers exploit right now
 ```
 
 ## Rules

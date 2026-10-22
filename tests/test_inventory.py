@@ -11,7 +11,7 @@ import textwrap
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
+sys.path.insert(0, os.path.join(ROOT, "skills", "zero-hour", "scripts"))
 
 import zh_inventory as I  # noqa: E402
 

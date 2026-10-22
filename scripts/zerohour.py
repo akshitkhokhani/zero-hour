@@ -338,6 +338,11 @@ def main(argv=None):
     if not argv or argv[0] not in ("scan", "pulse", "inventory", "card", "-h", "--help"):
         argv = ["scan"] + argv
     a = p.parse_args(argv)
+    if hasattr(os, "nice"):  # be a polite background citizen: lowest-impact CPU priority
+        try:
+            os.nice(10)
+        except OSError:
+            pass
     try:
         return a.fn(a)
     except KeyboardInterrupt:

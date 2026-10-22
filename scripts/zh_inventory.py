@@ -19,6 +19,7 @@ PRUNE_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", ".
               ".pytest_cache", ".next", ".nuxt", "dist", "build", "target", "vendor", ".gradle",
               ".idea", ".cache", "coverage", ".terraform", "site-packages"}
 MAX_DEPTH = 6
+MAX_FILES = 300000  # walk ceiling (a big monorepo is ~100k files)
 MAX_CHAIN = 8  # dependency path shown as evidence; bounded so crafted lockfiles can't blow up memory
 MAX_FILE_BYTES = 40 * 1024 * 1024
 
@@ -78,7 +79,13 @@ def _ignored(rel, pats):
 def walk(root, ignore=(), notes=None):
     root = os.path.abspath(root)
     base_depth = root.rstrip(os.sep).count(os.sep)
+    seen = 0
     for d, dirs, files in os.walk(root):
+        seen += len(files)
+        if seen > MAX_FILES:  # hard ceiling: never grind through a whole disk
+            if notes is not None:
+                notes.append("stopped after %d files — point zero-hour at a single project for full coverage" % MAX_FILES)
+            return
         rel = _rel(root, d)
         if rel != "." and _ignored(rel, ignore):
             dirs[:] = []
@@ -725,6 +732,16 @@ UNSUPPORTED = {"pom.xml", "build.gradle", "build.gradle.kts", "pubspec.yaml", "P
                "packages.config", "deps.edn", "project.clj", "cpanfile", "rebar.config"}
 
 
+_EXACT = set(LOCKFILES) | {"bun.lockb", "package.json", "pyproject.toml", "composer.json", "Pipfile",
+                           "Containerfile", "php.ini", ".user.ini", ".php-version", ".python-version",
+                           ".nvmrc", ".node-version", "constraints.txt"} | UNSUPPORTED
+
+
+def _interesting(fn):
+    return (fn in _EXACT or fn.startswith("Dockerfile") or fn.endswith((".Dockerfile", ".csproj", ".fsproj", ".ini",
+            ".yml", ".yaml")) or (fn.endswith(".txt") and "requirements" in fn))
+
+
 def _nonempty(path):
     try:
         return os.path.getsize(path) > 2
@@ -761,6 +778,8 @@ def build(root, include_host=True):
     have_lock_dirs, manifests = set(), []
     for path in walk(root, ignore, inv["notes"]):
         fn = os.path.basename(path)
+        if not _interesting(fn):  # cheap name check first: most files are never touched
+            continue
         rel = _rel(root, path)
         norm = path.replace(os.sep, "/")
         parser = LOCKFILES.get(fn)

@@ -37,8 +37,20 @@ def cache_dir():
     return d
 
 
+def prune_cache(max_age_days=3):
+    """Keep the cache small: drop intel responses older than a few days (cards are kept)."""
+    d, cutoff = cache_dir(), dt.datetime.now().timestamp() - max_age_days * 86400
+    try:
+        for e in os.scandir(d):
+            if e.is_file() and e.name.endswith(".json") and e.stat().st_mtime < cutoff:
+                os.remove(e.path)
+    except OSError:
+        pass
+
+
 class Net:
     def __init__(self, offline=False, ttl=TTL):
+        prune_cache()
         self.offline = offline
         self.ttl = ttl
         self.status = {}  # source -> "ok" | "cached" | "stale cache" | "error: ..." | "offline (no cache)"
@@ -129,7 +141,7 @@ def osv_scan(net, packages, max_vulns=800):
     # minimal stubs so the package still shows up (and MAL- still ranks as malicious).
     all_ids = sorted({i for ids in hits.values() for i in ids}, key=lambda i: (not i.startswith("MAL-"), i))
     details = {}
-    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+    with cf.ThreadPoolExecutor(max_workers=6) as ex:  # I/O-bound; small pool keeps CPU/RAM low
         fetch = all_ids[:max_vulns]
         for vid, data in zip(fetch, ex.map(lambda v: net.get_json(OSV_VULN % v, "osv", ttl=6 * TTL), fetch)):
             if data:

@@ -355,12 +355,27 @@ def _tracked_files(root):
         out = _git(["-C", root, "ls-files", "-z"])
         if out:
             return [os.path.join(root, p) for p in out.split("\0") if p]
-    return list(walk(root, _ignore_patterns(root)))
+    return walk(root, _ignore_patterns(root))  # generator: no giant in-memory file list
+
+
+SKIP_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".pdf", ".zip", ".gz", ".tgz", ".jar", ".woff",
+            ".woff2", ".ttf", ".mp4", ".mov", ".so", ".dylib", ".dll", ".exe", ".bin", ".lock", ".min.js",
+            ".map", ".svg", ".wasm", ".pyc", ".class", ".sqlite", ".db")
+MAX_SECRET_FILES = 20000
+MAX_SECRET_BYTES = 64 << 20
 
 
 def scan_secrets(root, limit=50):
+    """Bounded: at most MAX_SECRET_FILES text files / MAX_SECRET_BYTES read, binaries and lockfiles skipped."""
     out, ignore = [], _ignore_patterns(root)
+    files_read, bytes_read = 0, 0
     for path in _tracked_files(root):
+        if path.lower().endswith(SKIP_EXT) or os.path.basename(path).endswith(("-lock.json", "-lock.yaml")):
+            continue
+        if files_read >= MAX_SECRET_FILES or bytes_read >= MAX_SECRET_BYTES:
+            out.append({"id": "secret-scan-truncated", "level": "info", "file": None, "line": None,
+                        "title": "secret scan stopped after %d files / %d MB (resource cap)" % (files_read, bytes_read >> 20)})
+            break
         rel = _rel(root, path)
         if any(rel.replace(os.sep, "/").startswith(p + "/") for p in ignore):
             continue
@@ -374,6 +389,8 @@ def scan_secrets(root, limit=50):
                 continue
             with open(path, "r", encoding="utf-8", errors="strict") as fh:
                 text = fh.read()
+            files_read += 1
+            bytes_read += len(text)
         except (OSError, UnicodeDecodeError):
             continue
         for i, line in enumerate(text.splitlines(), 1):

@@ -1,0 +1,235 @@
+{
+  "id": "2026-10-21-litellm-1-107-0",
+  "title": "LiteLLM 1.107.0 malicious release (PyPI + Docker) steals credentials via cook.pth",
+  "kind": "supply-chain-compromise",
+  "published": "2026-10-21",
+  "updated": "2026-10-22",
+  "severity": "critical",
+  "exploited": true,
+  "summary": "Attackers used stolen GitHub CLI OAuth tokens to publish litellm 1.107.0 to PyPI and Docker; a cook.pth file runs a credential stealer at every Python start (even if litellm is never imported) and a backdoor polls a GitHub dead drop hourly, so any environment that installed or ran it must be treated as compromised.",
+  "cves": [],
+  "sources": [
+    {
+      "name": "The Hacker News",
+      "url": "https://thehackernews.com/2026/10/litellm-compromised-in-supply-chain.html"
+    },
+    {
+      "name": "The Register",
+      "url": "https://www.theregister.com/security/2026/10/21/litellm-supply-chain-attack-hoovers-up-passwords-and-secrets/5304548"
+    },
+    {
+      "name": "Brandefense",
+      "url": "https://brandefense.io/knowledge-hub/incidents/litellm-1-107-0-release-compromise-2026/"
+    }
+  ],
+  "notes": "Pulled from PyPI/Docker within ~2-3h; LiteLLM revoked tokens. Docker tags latest, main-latest and main-stable also pointed at the bad build during the window (bad digest per Brandefense: sha256:1bbcb1443bc962e45f5aad53fe3d2c30600e0379715fb6c664cdd3ac126c339e). 1.107.0rc1/rc2 reported clean by SafeDep. A March 2026 LiteLLM compromise (TeamPCP campaign) used the same cook.pth start-up trick. Lookalike GitHub org Berri-AI/litellm (real: BerriAI/litellm).",
+  "affected": [
+    {
+      "ecosystem": "PyPI",
+      "name": "litellm",
+      "versions": [
+        "1.107.0"
+      ],
+      "safe": "1.106.2"
+    },
+    {
+      "ecosystem": "Docker",
+      "name": "ghcr.io/berriai/litellm",
+      "tag_contains": [
+        "1.107.0"
+      ],
+      "safe": "v1.106.2 pinned by digest"
+    },
+    {
+      "ecosystem": "Docker",
+      "name": "litellm/litellm",
+      "tag_contains": [
+        "1.107.0"
+      ],
+      "safe": "v1.106.2 pinned by digest"
+    }
+  ],
+  "preconditions": [],
+  "iocs": {
+    "files": [
+      {
+        "path": "{site-packages}/cook.pth",
+        "contains": "import cook",
+        "level": "compromised",
+        "meaning": "Start-up hook: runs the stealer every time this Python starts",
+        "os": [
+          "darwin",
+          "linux",
+          "windows"
+        ]
+      },
+      {
+        "path": "{site-packages}/cook.py",
+        "level": "compromised",
+        "meaning": "Stealer module loaded by cook.pth",
+        "os": [
+          "darwin",
+          "linux",
+          "windows"
+        ]
+      },
+      {
+        "path": "{site-packages}/litellm-1.107.0.dist-info",
+        "level": "compromised",
+        "meaning": "The malicious release was installed into this environment",
+        "os": [
+          "darwin",
+          "linux",
+          "windows"
+        ]
+      },
+      {
+        "path": "{site-packages}/sitecustomize.py",
+        "level": "review",
+        "meaning": "Linked to the backdoor daemon in this campaign; some legitimate setups also ship one, so read it",
+        "os": [
+          "darwin",
+          "linux",
+          "windows"
+        ]
+      },
+      {
+        "path": "/tmp/remote_code_loader.lock",
+        "level": "compromised",
+        "meaning": "Backdoor (C2 loader) daemon ran or is still running",
+        "os": [
+          "darwin",
+          "linux"
+        ]
+      }
+    ],
+    "git": [],
+    "github_repos": [],
+    "network": [
+      "litellm.dev",
+      "www.litellm.dev",
+      "litellm.dev/healthcheck",
+      "github.com/letters9813"
+    ],
+    "strings": [
+      "litellm.dev",
+      "letters9813",
+      "privcollect"
+    ]
+  },
+  "remediation": [
+    {
+      "step": "Find every environment that has 1.107.0",
+      "when": "always",
+      "why": "LiteLLM is often a transitive dependency; the .pth runs even if your code never imports it.",
+      "danger": "Do not run pip/python inside a suspect environment to check it: every Python start re-runs cook.pth. Use python -S (skips .pth processing) or plain file search.",
+      "commands": {
+        "darwin": [
+          "find / -name 'cook.pth' -path '*site-packages*' 2>/dev/null",
+          "find / -type d -name 'litellm-1.107.0.dist-info' 2>/dev/null"
+        ],
+        "linux": [
+          "find / -name 'cook.pth' -path '*site-packages*' 2>/dev/null",
+          "find / -type d -name 'litellm-1.107.0.dist-info' 2>/dev/null"
+        ],
+        "windows": [
+          "Get-ChildItem -Path C:\\ -Recurse -Filter cook.pth -ErrorAction SilentlyContinue | Select-Object FullName",
+          "Get-ChildItem -Path C:\\ -Recurse -Directory -Filter 'litellm-1.107.0.dist-info' -ErrorAction SilentlyContinue | Select-Object FullName"
+        ],
+        "any": [
+          "grep -rn 'litellm' uv.lock poetry.lock Pipfile.lock requirements*.txt 2>/dev/null | grep '1.107.0'",
+          "docker images --digests --no-trunc | grep -i litellm",
+          "docker ps --format '{{.ID}} {{.Image}}' | grep -i litellm"
+        ]
+      }
+    },
+    {
+      "step": "Contain: stop the backdoor and quarantine the start-up files",
+      "when": "compromised",
+      "why": "Stops the hourly C2 poll and stops re-theft of the new secrets you are about to create.",
+      "danger": "Do this before rotating secrets, or the stealer can grab the new ones on the next Python start.",
+      "commands": {
+        "darwin": [
+          "ls -la /tmp/remote_code_loader.lock /tmp/.pc_once_* 2>/dev/null",
+          "lsof /tmp/remote_code_loader.lock",
+          "ps -o pid,command -p <PID>   # confirm, then: kill <PID>",
+          "mkdir -p ~/zh-quarantine && mv <site-packages>/cook.pth <site-packages>/cook.py ~/zh-quarantine/"
+        ],
+        "linux": [
+          "ls -la /tmp/remote_code_loader.lock /tmp/.pc_once_* 2>/dev/null",
+          "lsof /tmp/remote_code_loader.lock",
+          "ps -o pid,cmd -p <PID>   # confirm, then: kill <PID>",
+          "mkdir -p ~/zh-quarantine && mv <site-packages>/cook.pth <site-packages>/cook.py ~/zh-quarantine/"
+        ],
+        "windows": [
+          "New-Item -ItemType Directory -Force $env:USERPROFILE\\zh-quarantine",
+          "Move-Item <site-packages>\\cook.pth,<site-packages>\\cook.py $env:USERPROFILE\\zh-quarantine\\"
+        ],
+        "any": [
+          "docker stop <container-running-litellm-1.107.0>",
+          "Block egress to litellm.dev at DNS/firewall"
+        ]
+      }
+    },
+    {
+      "step": "Rotate every secret the host could read, from a clean machine",
+      "when": "compromised",
+      "why": "The stealer took cloud tokens, SSH keys, AI tool credentials, browser data, env vars and LiteLLM proxy keys/config.",
+      "danger": "Rotate from a different, clean machine. Only revoke after the old creds are replaced in your apps, and check audit logs before deleting anything.",
+      "commands": {
+        "any": [
+          "List: cloud keys and instance/task roles, LLM provider keys stored in the LiteLLM proxy, LiteLLM master + virtual keys, proxy DB password, GitHub/gh tokens, SSH keys, AI tool credentials, browser sessions, every .env value",
+          "aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=GetCallerIdentity --start-time 2026-10-21T00:00:00Z",
+          "aws iam list-access-keys",
+          "gh auth status"
+        ]
+      }
+    },
+    {
+      "step": "Rebuild the environment on 1.106.2 pinned by hash/digest",
+      "when": "affected",
+      "why": "Upgrading in place keeps leftovers (sitecustomize.py, cook.*); a fresh env is the clean fix.",
+      "danger": "Deleting the old venv/container is your call; keep a copy in quarantine if you want forensics.",
+      "commands": {
+        "any": [
+          "pip install 'litellm==1.106.2'   # in a NEW venv; then lock with hashes: pip-compile --generate-hashes / uv lock",
+          "uv add 'litellm==1.106.2'",
+          "docker pull ghcr.io/berriai/litellm:<1.106.2-tag> && docker inspect --format '{{index .RepoDigests 0}}' ghcr.io/berriai/litellm:<1.106.2-tag>   # then reference image@sha256:... in compose/k8s",
+          "Rebuild CI runners and proxy containers that ran 1.107.0"
+        ]
+      }
+    },
+    {
+      "step": "Hunt for exfiltration and spread",
+      "when": "affected",
+      "why": "Confirms what left the host and whether stolen creds were used elsewhere.",
+      "commands": {
+        "darwin": [
+          "log show --last 3d --predicate 'eventMessage CONTAINS \"litellm.dev\"' 2>/dev/null | head",
+          "grep -i 'import\\|exec\\|urllib\\|subprocess' <site-packages>/sitecustomize.py"
+        ],
+        "linux": [
+          "grep -ri 'litellm.dev' /var/log 2>/dev/null | head",
+          "grep -i 'import\\|exec\\|urllib\\|subprocess' <site-packages>/sitecustomize.py"
+        ],
+        "any": [
+          "Search proxy/DNS/firewall logs for litellm.dev, /healthcheck and /codepy",
+          "Review cloud audit logs for use of rotated keys from unknown IPs",
+          "Check every CI runner and image built 2026-10-21"
+        ]
+      }
+    },
+    {
+      "step": "Harden installs against the next poisoned release",
+      "when": "always",
+      "why": "Hash/digest pins stop a re-published tag from silently changing what you run.",
+      "commands": {
+        "any": [
+          "Lock Python deps with hashes (uv.lock, pip-compile --generate-hashes, pip install --require-hashes)",
+          "Pin images by @sha256 digest, never latest/main-latest/main-stable",
+          "Add a release cooldown before adopting brand-new versions"
+        ]
+      }
+    }
+  ]
+}

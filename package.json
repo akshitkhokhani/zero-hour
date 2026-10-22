@@ -1,0 +1,44 @@
+{
+  "name": "zerohour",
+  "version": "0.1.0",
+  "description": "Today's breach. Your stack. Am I hit, and what do I do right now? Live incident checks (OSV, CISA KEV, EPSS, community incident cards) for your project, as an Agent Skill and a zero-dependency CLI.",
+  "bin": {
+    "zerohour": "bin/zerohour.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/*.py",
+    "incidents/*.json",
+    "references/",
+    "SKILL.md",
+    "AGENTS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "security",
+    "supply-chain",
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "cursor",
+    "incident-response",
+    "osv",
+    "shai-hulud",
+    "litellm",
+    "php2shell"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akshitkhokhani/zero-hour.git"
+  },
+  "homepage": "https://github.com/akshitkhokhani/zero-hour#readme",
+  "bugs": {
+    "url": "https://github.com/akshitkhokhani/zero-hour/issues"
+  },
+  "license": "MIT",
+  "author": "Akshit Khokhani"
+}

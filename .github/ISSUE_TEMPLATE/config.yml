@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability in zero-hour
+    url: https://github.com/akshitkhokhani/zero-hour/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue.
+  - name: How to write an incident card
+    url: https://github.com/akshitkhokhani/zero-hour/blob/main/CONTRIBUTING.md
+    about: Send a card as a pull request.

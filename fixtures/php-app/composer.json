@@ -1,0 +1,8 @@
+{
+    "name": "zero-hour/php-app-fixture",
+    "description": "zero-hour test fixture",
+    "require": {
+        "php": "^8.3",
+        "monolog/monolog": "^3.7"
+    }
+}

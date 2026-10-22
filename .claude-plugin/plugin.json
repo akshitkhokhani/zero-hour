@@ -1,0 +1,24 @@
+{
+  "name": "zero-hour",
+  "displayName": "Zero Hour",
+  "version": "0.1.0",
+  "description": "Today's breach. Your stack. Am I hit, and what do I do right now? Checks your project and machine against live incidents (OSV incl. malicious packages, CISA KEV, EPSS, community incident cards) and gives evidence-backed verdicts plus a safe, ordered fix list. Read-only by default.",
+  "author": {
+    "name": "Akshit Khokhani",
+    "url": "https://github.com/akshitkhokhani"
+  },
+  "homepage": "https://github.com/akshitkhokhani/zero-hour",
+  "repository": "https://github.com/akshitkhokhani/zero-hour",
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "supply-chain",
+    "incident-response",
+    "osv",
+    "cisa-kev",
+    "epss",
+    "shai-hulud",
+    "litellm",
+    "php2shell"
+  ]
+}

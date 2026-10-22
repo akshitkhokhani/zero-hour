@@ -1,0 +1,6 @@
+[project]
+name = "litellm-app"
+version = "0.1.0"
+description = "zero-hour test fixture: an AI app that pulls litellm in transitively via crewai"
+requires-python = ">=3.12"
+dependencies = ["crewai>=0.80"]

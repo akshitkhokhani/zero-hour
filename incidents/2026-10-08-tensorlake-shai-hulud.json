@@ -1,0 +1,238 @@
+{
+  "id": "2026-10-08-tensorlake-shai-hulud",
+  "title": "tensorlake npm 0.5.144: Shai-Hulud-style worm with a token dead-man switch",
+  "kind": "supply-chain-compromise",
+  "published": "2026-10-08",
+  "updated": "2026-10-22",
+  "severity": "critical",
+  "exploited": true,
+  "summary": "A preinstall hook in tensorlake 0.5.144 runs on developer machines (it skips CI), steals GitHub/npm/cloud/SSH/AI-tool credentials, spreads by republishing npm packages and committing .claude/.vscode files, and installs a gh-token-monitor that wipes your home directory if the stolen GitHub token is revoked, so disarm it BEFORE rotating.",
+  "cves": [],
+  "sources": [
+    {
+      "name": "StepSecurity",
+      "url": "https://www.stepsecurity.io/blog/tensorlake-npm-compromised-hostage-token-worm"
+    },
+    {
+      "name": "Aikido",
+      "url": "https://www.aikido.dev/blog/tensorlake-npm-package-compromised"
+    },
+    {
+      "name": "The Hacker News",
+      "url": "https://thehackernews.com/2026/10/tensorlake-npm-package-compromised-to.html"
+    }
+  ],
+  "notes": "Payload: typescript/package.json preinstall (commit c79bc47) runs lib/setup.mjs, which downloads Bun and runs obfuscated lib/Math_Symbol.js. GitHub main-branch commits e90c47b..6386121 of tensorlakeai/tensorlake are also malicious. Related campaign: ChainDrop (since Aug 2026; hundreds of npm packages incl. Keyv, Cacheable).",
+  "affected": [
+    {
+      "ecosystem": "npm",
+      "name": "tensorlake",
+      "versions": [
+        "0.5.144"
+      ],
+      "safe": "0.5.143"
+    }
+  ],
+  "preconditions": [],
+  "iocs": {
+    "files": [
+      {
+        "path": "{project}/node_modules/tensorlake/lib/setup.mjs",
+        "sha256": "25a0735d0db7dc40e5d45ce42d9c106067e6a66e184d967cfecfab17c3bcb5ef",
+        "level": "compromised",
+        "meaning": "Malicious preinstall loader (downloads Bun, runs the stealer)",
+        "os": [
+          "darwin",
+          "linux",
+          "windows"
+        ]
+      },
+      {
+        "path": "{project}/node_modules/tensorlake/lib/Math_Symbol.js",
+        "sha256": "b50a00900399ba99fb6ce1fc151519cb99d44320ef2a631f2237e1aea0ad6fec",
+        "level": "compromised",
+        "meaning": "Obfuscated stealer/worm payload",
+        "os": [
+          "darwin",
+          "linux",
+          "windows"
+        ]
+      },
+      {
+        "path": "{launch-agents}/com.user.gh-token-monitor.plist",
+        "level": "compromised",
+        "meaning": "Dead-man switch persistence: wipes ~ if the stolen token is revoked",
+        "os": [
+          "darwin"
+        ]
+      },
+      {
+        "path": "{systemd-user}/gh-token-monitor.service",
+        "level": "compromised",
+        "meaning": "Dead-man switch persistence: wipes ~ if the stolen token is revoked",
+        "os": [
+          "linux"
+        ]
+      },
+      {
+        "path": "{home}/.local/bin/gh-token-monitor.sh",
+        "level": "compromised",
+        "meaning": "Dead-man switch script",
+        "os": [
+          "darwin",
+          "linux"
+        ]
+      },
+      {
+        "path": "{home}/.config/gh-token-monitor",
+        "level": "compromised",
+        "meaning": "Dead-man switch config (holds the stolen token reference)",
+        "os": [
+          "darwin",
+          "linux"
+        ]
+      }
+    ],
+    "git": [
+      {
+        "author_email": "claude@users.noreply.github.com",
+        "message_contains": "chore: update dependencies",
+        "meaning": "Worm commit planting .claude/settings.json / .vscode/tasks.json to re-run the payload"
+      }
+    ],
+    "github_repos": [
+      {
+        "description_contains": "Shai-Hulud: Here We Go Again",
+        "meaning": "Public exfil repo the worm created in your account"
+      }
+    ],
+    "network": [
+      "iseekaigogo.com"
+    ],
+    "strings": [
+      "iseekaigogo",
+      "Math_Symbol",
+      "gh-token-monitor",
+      "Shai-Hulud",
+      "setup.mjs"
+    ]
+  },
+  "remediation": [
+    {
+      "step": "Check exposure",
+      "when": "always",
+      "why": "Find every project and lockfile that pulled 0.5.144.",
+      "commands": {
+        "any": [
+          "npm ls tensorlake --all",
+          "grep -rn 'tensorlake' package-lock.json pnpm-lock.yaml yarn.lock bun.lock 2>/dev/null | grep '0.5.144'"
+        ],
+        "darwin": [
+          "shasum -a 256 node_modules/tensorlake/lib/setup.mjs node_modules/tensorlake/lib/Math_Symbol.js 2>/dev/null",
+          "ls -la ~/Library/LaunchAgents/com.user.gh-token-monitor.plist ~/.local/bin/gh-token-monitor.sh ~/.config/gh-token-monitor 2>/dev/null"
+        ],
+        "linux": [
+          "sha256sum node_modules/tensorlake/lib/setup.mjs node_modules/tensorlake/lib/Math_Symbol.js 2>/dev/null",
+          "ls -la ~/.config/systemd/user/gh-token-monitor.service ~/.local/bin/gh-token-monitor.sh ~/.config/gh-token-monitor 2>/dev/null"
+        ],
+        "windows": [
+          "Get-FileHash node_modules\\tensorlake\\lib\\setup.mjs,node_modules\\tensorlake\\lib\\Math_Symbol.js -Algorithm SHA256",
+          "Get-ScheduledTask | Where-Object { ($_.Actions | Out-String) -match 'monitor.ps1' } | Select-Object TaskName,TaskPath"
+        ]
+      }
+    },
+    {
+      "step": "Pin 0.5.143 and stop install scripts",
+      "when": "affected",
+      "why": "Stops the preinstall hook from re-running on the next install.",
+      "commands": {
+        "any": [
+          "npm install tensorlake@0.5.143 --save-exact --ignore-scripts",
+          "rm -rf node_modules && npm cache clean --force",
+          "echo 'ignore-scripts=true' >> .npmrc"
+        ]
+      }
+    },
+    {
+      "step": "DISARM the gh-token-monitor dead-man switch",
+      "when": "compromised",
+      "why": "It checks the stolen token every 60s for 24h and runs rm -rf ~/ (PowerShell profile wipe on Windows) once the token stops working.",
+      "danger": "⚠ Do NOT revoke GitHub tokens, run gh auth logout, or change your GitHub password until this step is verified. Back up important files first. Inspect ~/.config/gh-token-monitor/ privately to learn which token it holds (do not paste it anywhere).",
+      "commands": {
+        "darwin": [
+          "ls -la ~/.config/gh-token-monitor/",
+          "launchctl print gui/$(id -u)/com.user.gh-token-monitor",
+          "launchctl bootout gui/$(id -u)/com.user.gh-token-monitor",
+          "pgrep -fl gh-token-monitor   # if still running: kill <PID>",
+          "mkdir -p ~/zh-quarantine && mv ~/Library/LaunchAgents/com.user.gh-token-monitor.plist ~/.local/bin/gh-token-monitor.sh ~/.config/gh-token-monitor ~/zh-quarantine/",
+          "launchctl list | grep gh-token-monitor; pgrep -fl gh-token-monitor   # both must be empty"
+        ],
+        "linux": [
+          "ls -la ~/.config/gh-token-monitor/",
+          "systemctl --user status gh-token-monitor.service",
+          "systemctl --user disable --now gh-token-monitor.service",
+          "pgrep -af gh-token-monitor   # if still running: kill <PID>",
+          "mkdir -p ~/zh-quarantine && mv ~/.config/systemd/user/gh-token-monitor.service ~/.local/bin/gh-token-monitor.sh ~/.config/gh-token-monitor ~/zh-quarantine/ && systemctl --user daemon-reload",
+          "systemctl --user list-units --all | grep gh-token-monitor; pgrep -af gh-token-monitor   # both must be empty"
+        ],
+        "windows": [
+          "Get-ScheduledTask | Where-Object { ($_.Actions | Out-String) -match 'monitor.ps1' } | Select-Object TaskName,TaskPath",
+          "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'monitor.ps1' } | Select-Object ProcessId,CommandLine",
+          "Disable-ScheduledTask -TaskName '<TaskName>'",
+          "Stop-Process -Id <ProcessId>",
+          "Unregister-ScheduledTask -TaskName '<TaskName>' -Confirm:$true"
+        ]
+      }
+    },
+    {
+      "step": "Rotate credentials (only after the monitor is gone)",
+      "when": "compromised",
+      "why": "The payload stole GitHub/npm tokens, cloud, Kubernetes/Vault creds, SSH keys, browser logins and AI tool configs.",
+      "danger": "⚠ Revoking the GitHub token while gh-token-monitor still runs triggers the home-directory wipe.",
+      "commands": {
+        "any": [
+          "gh auth status",
+          "Revoke + reissue at https://github.com/settings/tokens and https://github.com/settings/applications",
+          "npm token list   # then revoke unknown/old tokens and create new ones",
+          "Rotate cloud keys, Kubernetes/Vault creds, SSH keys (update https://github.com/settings/keys), every .env secret, AI tool API keys, saved browser passwords/sessions"
+        ]
+      }
+    },
+    {
+      "step": "Hunt for spread to your repos and packages",
+      "when": "compromised",
+      "why": "The worm republishes your npm packages and plants agent configs that re-run it when a repo is opened.",
+      "commands": {
+        "any": [
+          "gh repo list --visibility public --limit 500 --json name,description --jq '.[] | select((.description // \"\") | test(\"Shai-Hulud\"; \"i\")) | .name'",
+          "gh search commits --author-email claude@users.noreply.github.com --owner <you-or-org>",
+          "git log --all --author='claude@users.noreply.github.com' --format='%h %ad %s'",
+          "git log --all --format='%h %an <%ae> %s' -- .claude/settings.json .vscode/tasks.json",
+          "npm view <your-package> time --json   # look for versions you did not publish"
+        ]
+      }
+    },
+    {
+      "step": "Rebuild the machine if you are not certain it is clean",
+      "when": "compromised",
+      "why": "Worm payloads can leave persistence that a checklist misses.",
+      "commands": {
+        "any": [
+          "Back up data (not dotfiles/scripts), reinstall the OS, restore, then re-auth with fresh credentials"
+        ]
+      }
+    },
+    {
+      "step": "Harden npm installs",
+      "when": "always",
+      "why": "Install scripts are the worm's entry point; this campaign skips CI and targets dev laptops.",
+      "commands": {
+        "any": [
+          "npm config set ignore-scripts true",
+          "Use a release cooldown (e.g. pnpm minimumReleaseAge) and lockfile-only installs (npm ci)",
+          "Enable 2FA / trusted publishing for your npm packages"
+        ]
+      }
+    }
+  ]
+}

@@ -84,7 +84,7 @@ for spread → harden**.
 
 ```mermaid
 flowchart TB
-    U([You ask: "am I affected?"]) --> R
+    U(["You ask: am I affected?"]) --> R
     subgraph LIVE["Live on every run (nothing stored in code)"]
         R["1. Research — your agent's own web search<br/>last 24 h → 7 days, primary sources"]
         F["2. Feeds — OSV.dev (incl. MAL- malware), GitHub Advisory DB<br/>(new malware + high/critical), CISA KEV, FIRST EPSS"]

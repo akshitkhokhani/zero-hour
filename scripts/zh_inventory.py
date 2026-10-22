@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 from collections import deque
 
 from zh_versions import clean, normalize_name
@@ -18,6 +19,7 @@ PRUNE_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", ".
               ".pytest_cache", ".next", ".nuxt", "dist", "build", "target", "vendor", ".gradle",
               ".idea", ".cache", "coverage", ".terraform", "site-packages"}
 MAX_DEPTH = 6
+MAX_CHAIN = 8  # dependency path shown as evidence; bounded so crafted lockfiles can't blow up memory
 MAX_FILE_BYTES = 40 * 1024 * 1024
 
 
@@ -51,6 +53,16 @@ def _split_at_version(spec):
     return spec[:idx], spec[idx + 1:]
 
 
+def _first_lines(text, pattern):
+    """{captured name: first line number}, built in one pass (avoids O(packages x lines))."""
+    rx, out = re.compile(pattern), {}
+    for i, l in enumerate(text.splitlines(), 1):
+        m = rx.search(l)
+        if m and m.group(1) not in out:
+            out[m.group(1)] = i
+    return out
+
+
 def _ignore_patterns(root):
     text = _read(os.path.join(root, ".zerohourignore"))
     if not text:
@@ -63,7 +75,7 @@ def _ignored(rel, pats):
     return any(fnmatch.fnmatch(rel, p) or rel.startswith(p + "/") for p in pats)
 
 
-def walk(root, ignore=()):
+def walk(root, ignore=(), notes=None):
     root = os.path.abspath(root)
     base_depth = root.rstrip(os.sep).count(os.sep)
     for d, dirs, files in os.walk(root):
@@ -72,6 +84,8 @@ def walk(root, ignore=()):
             dirs[:] = []
             continue
         if d.count(os.sep) - base_depth >= MAX_DEPTH:
+            if dirs and notes is not None and not any("deeper than" in n for n in notes):
+                notes.append("directories deeper than %d levels were not scanned (e.g. %s)" % (MAX_DEPTH, rel))
             dirs[:] = []
         dirs[:] = [x for x in dirs if x not in PRUNE_DIRS]
         for f in files:
@@ -152,7 +166,7 @@ def parse_npm_lock(path, root):
 
         def chain(k):
             names = []
-            while k:
+            while k and len(names) < MAX_CHAIN:
                 names.append(k.rsplit("node_modules/", 1)[-1])
                 k = parent.get(k)
             return list(reversed(names))
@@ -225,6 +239,11 @@ def parse_yarn_lock(path, root):
                 continue
             if "@patch:" in first:  # "resolve@patch:resolve@npm%3A^1.20.0#..." → resolve
                 first = first.split("@patch:", 1)[0] + "@patch"
+            elif "@npm:" in first:  # alias "tl@npm:tensorlake@0.5.144" → tensorlake
+                target = first.split("@npm:", 1)[1]
+                tname, tver = _split_at_version(target)
+                if tver and tname and not tname[0].isdigit() and tname[0] not in "^~<>=*":
+                    first = target
             cur_name, _ = _split_at_version(first)
             cur_line = i
             continue
@@ -251,7 +270,7 @@ def parse_bun_lock(path, root):
         data = json.loads(stripped)
     except ValueError:
         return []
-    lines = text.splitlines()
+    idx = _first_lines(text, r'"([^"]+@[^"]+)"')
     direct = _manifest_direct(os.path.dirname(path))
     out = []
     for val in (data.get("packages") or {}).values():
@@ -260,7 +279,7 @@ def parse_bun_lock(path, root):
         name, ver = _split_at_version(val[0])
         if not ver or ver.startswith(("workspace:", "file:", "link:")):
             continue
-        line = next((i for i, l in enumerate(lines, 1) if '"%s"' % val[0] in l), None)
+        line = idx.get(val[0])
         out.append(_pkg("npm", name, ver, src, line, direct=name in direct or None,
                         scope=direct.get(name)))
     return out
@@ -309,12 +328,12 @@ def parse_pipfile_lock(path, root):
     except ValueError:
         return []
     src = _rel(root, path)
-    lines = text.splitlines()
+    idx = _first_lines(text, r'^\s*"([^"]+)":\s*\{')
     out = []
     for section, scope in (("default", "prod"), ("develop", "dev")):
         for name, e in (data.get(section) or {}).items():
             ver = (e.get("version") or "").lstrip("=") or None
-            line = next((i for i, l in enumerate(lines, 1) if '"%s": {' % name in l), None)
+            line = idx.get(name)
             out.append(_pkg("PyPI", name, ver, src, line, scope=scope))
     return out
 
@@ -354,6 +373,8 @@ def parse_toml_packages(path, root, eco):
             continue
         if re.match(r"^source\s*=\s*\{.*\b(editable|virtual|workspace)\b", line):
             cur["root"] = True
+        if line.startswith("source"):
+            cur["has_source"] = True
         if re.match(r"^dependencies\s*=\s*\[", line):
             in_deps = True
         if in_deps:
@@ -388,7 +409,7 @@ def parse_toml_packages(path, root, eco):
 
     def chain(n):
         names = []
-        while n:
+        while n and len(names) < MAX_CHAIN:
             names.append(by_name[n]["name"])
             n = parent.get(n)
         return list(reversed(names))
@@ -396,6 +417,8 @@ def parse_toml_packages(path, root, eco):
     out = []
     for b in blocks:
         if not b.get("name") or not b.get("version") or b.get("root"):
+            continue
+        if eco == "crates.io" and not b.get("has_source"):  # local workspace crate, not from crates.io
             continue
         n = norm(b["name"])
         out.append(_pkg(eco, b["name"], b["version"], src, b["line"],
@@ -413,7 +436,7 @@ def parse_composer_lock(path, root):
     except ValueError:
         return []
     src = _rel(root, path)
-    lines = text.splitlines()
+    idx = _first_lines(text, r'"name":\s*"([^"]+)"')
     cj = _read(os.path.join(os.path.dirname(path), "composer.json"))
     try:
         cjd = json.loads(cj) if cj else {}
@@ -424,7 +447,7 @@ def parse_composer_lock(path, root):
     for section, scope in (("packages", "prod"), ("packages-dev", "dev")):
         for e in data.get(section) or []:
             name = e.get("name")
-            line = next((i for i, l in enumerate(lines, 1) if '"name": "%s"' % name in l), None)
+            line = idx.get(name)
             out.append(_pkg("Packagist", name, e.get("version"), src, line,
                             direct=name in direct, scope=scope))
     return out
@@ -529,12 +552,20 @@ INI_KEYS = ("session.upload_progress.enabled", "memory_limit", "fatal_error_back
 def parse_dockerfile(path, root):
     text = _read(path) or ""
     src = _rel(root, path)
-    images, stages, runtimes, ini = [], set(), [], []
+    images, stages, runtimes, ini, args = [], set(), [], [], {}
     for i, line in enumerate(text.splitlines(), 1):
+        am = re.match(r"^\s*ARG\s+(\w+)=['\"]?([^\s'\"]+)", line, re.I)
+        if am:
+            args[am.group(1)] = am.group(2)
         m = re.match(r"^\s*FROM\s+(?:--platform=\S+\s+)?(\S+)(?:\s+AS\s+(\S+))?", line, re.I)
         if m:
-            ref = m.group(1)
-            if ref.lower() not in stages and ref.lower() != "scratch" and "$" not in ref:
+            ref = re.sub(r"\$\{?(\w+)(?::-([^}]*))?\}?", lambda v: args.get(v.group(1), v.group(2) or v.group(0)), m.group(1))
+            if "$" in ref:  # unresolved build arg: keep it so the verdict becomes UNKNOWN, not CLEAR
+                name, tag = image_ref(ref)
+                if "$" not in name:
+                    runtimes += [dict(rt, version=None) for rt in runtime_from_image(name, tag, src, i)]
+                    images.append({"name": name, "tag": tag, "source": src, "line": i, "pinned": False, "unresolved": True})
+            elif ref.lower() not in stages and ref.lower() != "scratch":
                 name, tag = image_ref(ref)
                 images.append({"name": name, "tag": tag, "source": src, "line": i,
                                "pinned": "@sha256:" in ref})
@@ -587,11 +618,30 @@ def parse_php_ini(path, root):
     return out
 
 
+def which_safe(name):
+    """Resolve an executable from PATH only, never from the current directory (Windows searches
+    cwd first, and the scanned project must never be able to plant php.exe / python.exe)."""
+    cwd = os.path.realpath(os.getcwd())
+    exts = os.environ.get("PATHEXT", ".EXE;.CMD;.BAT").split(";") if os.name == "nt" else [""]
+    for d in os.environ.get("PATH", "").split(os.pathsep):
+        if not d or d == "." or os.path.realpath(d) == cwd:
+            continue
+        for ext in exts:
+            cand = os.path.join(d, name + ext)
+            if os.path.isfile(cand) and os.access(cand, os.X_OK):
+                return cand
+    return None
+
+
 def run(cmd, timeout=6):
-    if not shutil.which(cmd[0]):
+    """Run a read-only probe. Absolute executable, neutral cwd: nothing in the scanned
+    project (json.py, php.ini, .exe files) can be picked up."""
+    exe = which_safe(cmd[0])
+    if not exe:
         return None
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run([exe] + list(cmd[1:]), capture_output=True, text=True, timeout=timeout,
+                           cwd=tempfile.gettempdir(), stdin=subprocess.DEVNULL)
         return (r.stdout or "") + (r.stderr or "")
     except (OSError, subprocess.SubprocessError):
         return None
@@ -644,7 +694,7 @@ def site_packages_dirs(project=None, host=True):
                  os.path.join(home, "Library", "Python", "*", "lib", "python", "site-packages"),
                  os.path.join(home, "AppData", "Roaming", "Python", "Python*", "site-packages")]
         for exe in ("python3", "python"):
-            out = run([exe, "-c", "import site,json;print(json.dumps(site.getsitepackages()+[site.getusersitepackages()]))"])
+            out = run([exe, "-I", "-S", "-c", "import site,json;print(json.dumps(site.getsitepackages()+[site.getusersitepackages()]))"])
             try:
                 dirs += [d for d in json.loads((out or "[]").strip().splitlines()[-1]) if os.path.isdir(d)]
             except (ValueError, IndexError):
@@ -671,20 +721,58 @@ def installed_python(sp_dir, label):
 
 # ---------------------------------------------------------------- entry point
 
+UNSUPPORTED = {"pom.xml", "build.gradle", "build.gradle.kts", "pubspec.yaml", "Package.swift", "mix.exs",
+               "packages.config", "deps.edn", "project.clj", "cpanfile", "rebar.config"}
+
+
+def _nonempty(path):
+    try:
+        return os.path.getsize(path) > 2
+    except OSError:
+        return False
+
+
+def manifest_names(path, root):
+    """Dependency names declared in a manifest that has no lockfile (versions unknown)."""
+    fn, src = os.path.basename(path), _rel(root, path)
+    text = _read(path) or ""
+    out = []
+    try:
+        if fn == "package.json":
+            names = _manifest_direct(os.path.dirname(path))
+            out = [("npm", n) for n in names]
+        elif fn == "composer.json":
+            d = json.loads(text)
+            out = [("Packagist", n) for n in list(d.get("require") or {}) + list(d.get("require-dev") or {}) if "/" in n]
+        elif fn in ("pyproject.toml", "Pipfile"):
+            out = [("PyPI", n) for n in _pyproject_direct(os.path.dirname(path))] if fn == "pyproject.toml" else \
+                  [("PyPI", n) for n in re.findall(r"(?m)^([A-Za-z0-9_.\-]+)\s*=", text)]
+    except (ValueError, AttributeError):
+        pass
+    return [{"ecosystem": e, "name": n, "source": src} for e, n in out]
+
+
 def build(root, include_host=True):
     root = os.path.abspath(root)
     ignore = _ignore_patterns(root)
     inv = {"root": root, "packages": [], "images": [], "runtimes": [], "actions": [], "ini": [],
            "files": [], "notes": [], "manifests_without_lock": [], "host_packages": [],
-           "site_packages": []}
+           "site_packages": [], "manifest_packages": [], "unsupported": []}
     have_lock_dirs, manifests = set(), []
-    for path in walk(root, ignore):
+    for path in walk(root, ignore, inv["notes"]):
         fn = os.path.basename(path)
         rel = _rel(root, path)
         norm = path.replace(os.sep, "/")
         parser = LOCKFILES.get(fn)
         if parser:
-            inv["packages"] += parser(path, root)
+            try:
+                got = parser(path, root)
+            except Exception as e:  # a hostile/odd lockfile must not abort the scan
+                got = []
+                inv["notes"].append("%s could not be parsed (%s)" % (rel, type(e).__name__))
+            if not got and _nonempty(path):
+                inv["notes"].append("%s could not be parsed or is too large — its dependencies were NOT checked" % rel)
+            inv["packages"] += got
             inv["files"].append(rel)
             have_lock_dirs.add(os.path.dirname(path))
         elif fnmatch.fnmatch(fn, "*requirements*.txt") or fn == "constraints.txt":
@@ -695,6 +783,8 @@ def build(root, include_host=True):
             inv["notes"].append("%s is binary; run `bun install --save-text-lockfile` for full coverage" % rel)
         elif fn in ("package.json", "pyproject.toml", "composer.json", "Pipfile"):
             manifests.append(path)
+        elif fn in UNSUPPORTED or fn.endswith((".csproj", ".fsproj")):
+            inv["unsupported"].append(rel)
         elif fn.startswith("Dockerfile") or fn.endswith(".Dockerfile") or fn == "Containerfile":
             imgs, rts, ini = parse_dockerfile(path, root)
             inv["images"] += imgs
@@ -726,6 +816,7 @@ def build(root, include_host=True):
     for m in manifests:
         if os.path.dirname(m) not in have_lock_dirs:
             inv["manifests_without_lock"].append(_rel(root, m))
+            inv["manifest_packages"] += manifest_names(m, root)
     for d in site_packages_dirs(root, host=False):
         inv["site_packages"].append(d)
         inv["packages"] += installed_python(d, _rel(root, d))

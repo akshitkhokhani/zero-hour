@@ -28,7 +28,7 @@ Obey these rules at all times.
 Find the folder of this skill (the folder that contains this SKILL.md). Run:
 
 ```bash
-python3 <skill-dir>/scripts/zerohour.py inventory . --no-host > /tmp/zh-inventory.json   # on Windows: python or py -3
+python3 <skill-dir>/scripts/zerohour.py inventory . --no-host   # on Windows: python or py -3
 ```
 
 Read the output. Note the ecosystems and the important packages (AI SDKs, auth, web frameworks, CMS). Also note the runtimes and their source, the container images, the CI and the agent configs. If Python 3.9+ is not available, go to **Fallback**.
@@ -57,7 +57,7 @@ For sources and method, read `references/researching-incidents.md`.
 For each relevant incident that the scan does not know yet, write a card JSON. Use only facts from your sources. Get the template with `zerohour.py card template`. The schema is `incidents/schema.json`. Then add the card:
 
 ```bash
-python3 <skill-dir>/scripts/zerohour.py card add /tmp/<id>.json
+python3 <skill-dir>/scripts/zerohour.py card add <temp-dir>/<id>.json   # any temp folder: /tmp, %TEMP%
 ```
 
 The scan uses the card on this run and on later runs. Put the remediation steps in the safe order:
@@ -71,7 +71,7 @@ The scan uses the card on this run and on later runs. Put the remediation steps 
 ### Step 4: Scan
 
 ```bash
-python3 <skill-dir>/scripts/zerohour.py scan . --format json --out /tmp/zh-report.json
+python3 <skill-dir>/scripts/zerohour.py scan . --format json --out <temp-dir>/zh-report.json
 python3 <skill-dir>/scripts/zerohour.py scan .            # report for humans
 ```
 
@@ -84,7 +84,7 @@ Flags:
 - `--no-host`: check the project only.
 - `--offline`: use cached intel only.
 
-On each run, the scan queries OSV.dev (with `MAL-` malicious packages) for each locked dependency. It also uses GitHub Advisory DB (malware, and high or critical advisories in the window), CISA KEV, FIRST EPSS, community incident cards and your cards. Then it hunts IOCs read-only: site-packages, LaunchAgents, systemd units, scheduled tasks, git log and AI-agent configs. Exit code 2 means that the scan found an affected or compromised item.
+On each run, the scan queries OSV.dev (with `MAL-` malicious packages) for each locked dependency. It also uses GitHub Advisory DB (malware, and high or critical advisories in the window), CISA KEV, FIRST EPSS, community incident cards and your cards. Then it hunts IOCs read-only: the file paths from the incident cards (site-packages, LaunchAgents, systemd units and others), the git log and the AI-agent configs. It does not list Windows scheduled tasks. Check them manually when a card names one. Exit code 2 means that the scan found an affected or compromised item.
 
 ### Step 5: Judge the results
 

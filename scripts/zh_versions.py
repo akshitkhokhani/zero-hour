@@ -61,6 +61,8 @@ def in_range(version, rng):
     intro = rng.get("introduced") or "0"
     if intro != "0" and cmp(version, intro) < 0:
         return False
+    if rng.get("introduced_exclusive") and cmp(version, intro) == 0:
+        return False
     if rng.get("fixed"):
         return cmp(version, rng["fixed"]) < 0
     if rng.get("limit"):

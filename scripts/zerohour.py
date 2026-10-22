@@ -146,7 +146,11 @@ def cmd_scan(a):
             if gh_unknown:
                 unknowns.append("%s: could not list your GitHub repos (is `gh` logged in?)" % c["title"])
         scope = inv if (not c.get("live") or c.get("kind") == "malware") else dict(inv, host_packages=[])
-        res = zh_report.eval_card(c, scope, hits)
+        try:
+            res = zh_report.eval_card(c, scope, hits)
+        except Exception as e:  # one malformed card must never break the whole scan
+            unknowns.append("incident card %s could not be evaluated (%s)" % (c.get("id"), type(e).__name__))
+            continue
         if c.get("live") and res["verdict"] == "clear":
             continue
         incidents.append(res)
@@ -166,12 +170,23 @@ def cmd_scan(a):
             "network_iocs": [], "sources": [{"name": "CISA KEV", "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"}],
             "origin": "live (CISA KEV)", "published": v.get("dateAdded"), "cves": [v["cveID"]]})
 
-    covered = set()
+    covered = set()  # only non-clear incidents may hide a duplicate OSV advisory
     for inc in incidents:
+        if inc["verdict"] == "clear":
+            continue
         covered |= {inc["id"]} | set(inc.get("cves") or [])
     for c in curated + live:
         if c["id"] in covered:
             covered |= set(c.get("aliases") or [])
+    for x in inv.get("unsupported", []):
+        unknowns.append("%s: this ecosystem is not parsed yet — its dependencies were NOT checked" % x)
+    if not (inv["packages"] or inv["images"] or inv["runtimes"] or inv.get("manifests_without_lock")):
+        unknowns.append("no supported lockfiles, manifests, images or runtimes found in %s — nothing to match (wrong directory?)" % root)
+    for src_name, label in (("github-advisories", "GitHub Advisory DB (new malware/critical advisories)"),
+                            ("zero-hour-cards", "community incident cards")):
+        st = net.status.get(src_name, "")
+        if st.startswith("error") or st.startswith("offline"):
+            unknowns.append("%s unavailable (%s) — results may miss incidents from the last days" % (label, st))
     osv_hits = zh_intel.osv_scan(net, inv["packages"])
     if osv_hits is None:
         unknowns.append("OSV.dev unreachable — known-vulnerable and malicious dependency versions were NOT checked")
@@ -226,9 +241,9 @@ def cmd_pulse(a):
             "critical_advisories": [{"id": c["id"], "title": c["title"], "severity": c["severity"], "published": c["published"],
                                      "packages": sorted({"%s (%s)" % (x["name"], x["ecosystem"]) for x in c["affected"]})[:4]}
                                     for c in vulns if c.get("severity") == "critical"][:20]}
-    for c in malware:
-        for x in c["affected"]:
-            data["malware_by_ecosystem"][x["ecosystem"]] = data["malware_by_ecosystem"].get(x["ecosystem"], 0) + 1
+    for c in malware:  # count advisories, not affected entries, so the breakdown sums to the total
+        eco = c["affected"][0]["ecosystem"]
+        data["malware_by_ecosystem"][eco] = data["malware_by_ecosystem"].get(eco, 0) + 1
     if a.format == "json":
         _emit(json.dumps(data, indent=2) + "\n", None)
         return 0

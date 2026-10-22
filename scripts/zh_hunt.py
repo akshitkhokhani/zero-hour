@@ -43,6 +43,9 @@ SUSPICIOUS = [
 
 
 def redact(text):
+    text = re.sub(r"(\b[a-z][a-z0-9+.\-]*://[^:/\s@]+:)([^@\s/]+)@", r"\1[redacted]@", text, flags=re.I)
+    text = re.sub(r"(?i)([?&](?:token|key|apikey|api_key|secret|password|pass|pwd|access_token|auth|sig|signature)=)[^&\s\"']+",
+                  r"\1[redacted]", text)
     for _, pat in SECRET_PATTERNS:
         text = pat.sub(lambda m: m.group(0)[:4] + "…[redacted]", text)
     text = re.sub(r"(?i)((?:token|secret|password|passwd|api[_-]?key|authorization)[\"'=:\s]+(?:bearer\s+)?)([^\s\"',]{6,})",
@@ -119,6 +122,26 @@ def hunt_files(card, project, sp_dirs):
     return hits
 
 
+# git reads .git/config from the scanned repo; neutralise every key that can execute a program.
+GIT_SAFE = ["-c", "core.fsmonitor=false", "-c", "log.showSignature=false", "-c", "gpg.program=false",
+            "-c", "core.hooksPath=/dev/null", "-c", "diff.external=", "-c", "core.pager=cat",
+            "-c", "safe.directory=*"]
+
+
+def _git(args, timeout=20):
+    from zh_inventory import which_safe
+    exe = which_safe("git")
+    if not exe:
+        return ""
+    env = dict(os.environ, GIT_CONFIG_NOSYSTEM="1", GIT_TERMINAL_PROMPT="0", GIT_PAGER="cat")
+    try:
+        r = subprocess.run([exe] + GIT_SAFE + args, capture_output=True, text=True, timeout=timeout,
+                           env=env, stdin=subprocess.DEVNULL, cwd=os.path.expanduser("~"))
+        return r.stdout or ""
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
 _GIT_LOG_CACHE = {}
 
 
@@ -126,13 +149,9 @@ def _git_log(project):
     if project in _GIT_LOG_CACHE:
         return _GIT_LOG_CACHE[project]
     out = []
-    if project and os.path.isdir(os.path.join(project, ".git")) and shutil.which("git"):
-        try:
-            r = subprocess.run(["git", "-C", project, "log", "--all", "-n", "5000",
-                                "--format=%h%x09%ae%x09%s"], capture_output=True, text=True, timeout=20)
-            out = [l.split("\t", 2) for l in r.stdout.splitlines() if l.count("\t") >= 2]
-        except (OSError, subprocess.SubprocessError):
-            out = []
+    if project and os.path.isdir(os.path.join(project, ".git")):
+        text = _git(["-C", project, "log", "--all", "--no-show-signature", "-n", "5000", "--format=%h%x09%ae%x09%s"])
+        out = [l.split("\t", 2) for l in text.splitlines() if l.count("\t") >= 2]
     _GIT_LOG_CACHE[project] = out
     return out
 
@@ -153,10 +172,12 @@ def hunt_git(card, project):
 
 def hunt_github(card):
     iocs = (card.get("iocs") or {}).get("github_repos", []) or []
-    if not iocs or not shutil.which("gh"):
+    from zh_inventory import which_safe
+    gh = which_safe("gh")
+    if not iocs or not gh:
         return [], bool(iocs)
     try:
-        r = subprocess.run(["gh", "repo", "list", "--limit", "1000", "--json", "name,description"],
+        r = subprocess.run([gh, "repo", "list", "--limit", "1000", "--json", "name,description"],
                            capture_output=True, text=True, timeout=30)
         repos = json.loads(r.stdout or "[]")
     except (OSError, subprocess.SubprocessError, ValueError):
@@ -330,12 +351,10 @@ def audit_compose(inv):
 
 
 def _tracked_files(root):
-    if os.path.isdir(os.path.join(root, ".git")) and shutil.which("git"):
-        try:
-            r = subprocess.run(["git", "-C", root, "ls-files", "-z"], capture_output=True, text=True, timeout=20)
-            return [os.path.join(root, p) for p in r.stdout.split("\0") if p]
-        except (OSError, subprocess.SubprocessError):
-            pass
+    if os.path.isdir(os.path.join(root, ".git")):
+        out = _git(["-C", root, "ls-files", "-z"])
+        if out:
+            return [os.path.join(root, p) for p in out.split("\0") if p]
     return list(walk(root, _ignore_patterns(root)))
 
 

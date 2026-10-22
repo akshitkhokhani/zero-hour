@@ -60,14 +60,17 @@ def eval_card(card, inv, hunt_hits):
                     notes.append("%s: %s version not pinned (%s) — check `%s -v` where it really runs" % (where, want, rt["origin"], want))
                     continue
                 hit_ranges = [r for r in aff.get("ranges", []) if in_range(v, r)]
-                if v.count(".") < 2:  # only major.minor known, e.g. php8.3 tag
-                    probe = v + ".0"
-                    hit_ranges = [r for r in aff.get("ranges", []) if in_range(probe, r)]
-                    if hit_ranges and all(r.get("fixed") for r in hit_ranges):
+                if v.count(".") < 2:  # only "8" or "8.3" known (floating tag): patch level is unknowable here
+                    pad = 2 - v.count(".")
+                    low, high = v + ".0" * pad, v + ".99999" * pad
+                    over = [r for r in aff.get("ranges", []) if in_range(low, r) or in_range(high, r) or
+                            (r.get("introduced") not in (None, "0") and cmp(low, r["introduced"]) <= 0 <= cmp(high, r["introduced"]))]
+                    if over:
                         bump("exposed")
-                        ev.append({"text": "%s %s %s%s — floating tag; rebuild with --pull and confirm ≥ %s" % (
-                            where, want, v, sapi, hit_ranges[0]["fixed"]), "file": rt["source"], "line": rt.get("line")})
-                        continue
+                        fixes = ", ".join(sorted({r["fixed"] for r in over if r.get("fixed")})) or "see advisory"
+                        ev.append({"text": "%s %s %s%s — floating tag, patch level unknown; run `%s -v` inside the image (fixed: %s)" % (
+                            where, want, v, sapi, want, fixes), "file": rt["source"] if rt.get("line") else None, "line": rt.get("line")})
+                    continue
                 if not hit_ranges:
                     continue
                 note = "; ".join(r["note"] for r in hit_ranges if r.get("note"))
@@ -99,6 +102,13 @@ def eval_card(card, inv, hunt_hits):
             pkgs = inv.get("packages", []) + inv.get("host_packages", [])
             if any(p["ecosystem"] == eco for p in pkgs):
                 present = True
+            declared = [m for m in inv.get("manifest_packages", [])
+                        if m["ecosystem"] == eco and normalize_name(eco, m["name"]) == want]
+            if declared and not any(p["ecosystem"] == eco and normalize_name(eco, p["name"]) == want for p in pkgs):
+                present = True
+                bump("unknown")
+                notes.append("%s declares %s but has no lockfile — exact version unknown; run your package manager's lock/list command" % (
+                    declared[0]["source"], aff["name"]))
             for p in pkgs:
                 if p["ecosystem"] != eco or normalize_name(eco, p["name"]) != want:
                     continue

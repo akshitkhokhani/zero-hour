@@ -125,14 +125,17 @@ def osv_scan(net, packages, max_vulns=800):
             ids = [v["id"] for v in (r.get("vulns") or [])]
             if ids:
                 hits[k] = ids
-    all_ids = sorted({i for ids in hits.values() for i in ids})[:max_vulns]
+    # Malicious-package records first; never drop an id silently. Ids without details become
+    # minimal stubs so the package still shows up (and MAL- still ranks as malicious).
+    all_ids = sorted({i for ids in hits.values() for i in ids}, key=lambda i: (not i.startswith("MAL-"), i))
     details = {}
     with cf.ThreadPoolExecutor(max_workers=8) as ex:
-        fetched = ex.map(lambda v: net.get_json(OSV_VULN % v, "osv", ttl=6 * TTL), all_ids)
-        for vid, data in zip(all_ids, fetched):
+        fetch = all_ids[:max_vulns]
+        for vid, data in zip(fetch, ex.map(lambda v: net.get_json(OSV_VULN % v, "osv", ttl=6 * TTL), fetch)):
             if data:
                 details[vid] = data
-    return {k: [details[i] for i in ids if i in details] for k, ids in hits.items()}
+    stub = lambda i: {"id": i, "aliases": [], "summary": "details not fetched — see https://osv.dev/vulnerability/" + i}
+    return {k: [details.get(i) or stub(i) for i in ids] for k, ids in hits.items()}
 
 
 # ---------------------------------------------------------------- KEV + EPSS
@@ -168,10 +171,59 @@ def epss(net, cves):
 REQUIRED = ("id", "title", "published", "summary", "sources", "affected", "remediation")
 
 
+def _strs(v):
+    return isinstance(v, list) and all(isinstance(x, str) for x in v)
+
+
 def validate_card(card):
+    """Structural + type checks, so a bad card (remote, agent-written or --card) can never crash a scan."""
     if not isinstance(card, dict):
         return ["card must be a JSON object"]
     errs = ["missing '%s'" % k for k in REQUIRED if k not in card]
+    for k in ("id", "title", "summary", "published"):
+        if k in card and not isinstance(card[k], str):
+            errs.append("'%s' must be a string" % k)
+    if isinstance(card.get("id"), str) and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:+-]{0,120}", card["id"]):
+        errs.append("id may only use letters, digits and . _ : + -")
+    for k in ("cves", "aliases"):
+        if k in card and not _strs(card[k]):
+            errs.append("'%s' must be a list of strings" % k)
+    if not isinstance(card.get("affected"), list) or not all(isinstance(a, dict) for a in card.get("affected") or []):
+        errs.append("affected must be a list of objects")
+    else:
+        for i, a in enumerate(card["affected"]):
+            if not isinstance(a.get("ecosystem"), str) or not isinstance(a.get("name"), str):
+                errs.append("affected[%d] ecosystem/name must be strings" % i)
+            for k in ("versions", "tag_contains"):
+                if k in a and not _strs(a[k]):
+                    errs.append("affected[%d].%s must be a list of strings" % (i, k))
+            if "ranges" in a and not (isinstance(a["ranges"], list) and all(
+                    isinstance(r, dict) and all(isinstance(v, (str, bool)) for v in r.values()) for r in a["ranges"])):
+                errs.append("affected[%d].ranges must be a list of objects with string values" % i)
+    if not isinstance(card.get("remediation"), list):
+        errs.append("remediation must be a list")
+    else:
+        for i, st in enumerate(card["remediation"]):
+            if not isinstance(st, dict):
+                continue
+            cmds = st.get("commands", {})
+            if not (isinstance(cmds, dict) and all(_strs(v) for v in cmds.values())):
+                errs.append("remediation[%d].commands must map os -> list of strings" % i)
+            for k in ("step", "why", "danger", "when"):
+                if k in st and st[k] is not None and not isinstance(st[k], str):
+                    errs.append("remediation[%d].%s must be a string" % (i, k))
+    iocs = card.get("iocs", {})
+    if not isinstance(iocs, dict):
+        errs.append("iocs must be an object")
+    else:
+        for k in ("files", "git", "github_repos"):
+            if k in iocs and not (isinstance(iocs[k], list) and all(isinstance(x, dict) for x in iocs[k])):
+                errs.append("iocs.%s must be a list of objects" % k)
+        for k in ("network", "strings"):
+            if k in iocs and not _strs(iocs[k]):
+                errs.append("iocs.%s must be a list of strings" % k)
+    if not isinstance(card.get("preconditions", []), list):
+        errs.append("preconditions must be a list")
     if not isinstance(card.get("sources"), list) or not card.get("sources"):
         errs.append("sources must be a non-empty list")
     for i, a in enumerate(card.get("affected") or []):
@@ -213,7 +265,9 @@ def load_cards(net, extra_paths=(), remote=True):
         if not isinstance(card, dict) or validate_card(card):
             return False
         old = cards.get(card["id"])
-        if not old or _stamp(card) >= _stamp(old):
+        # a remote card may only replace a bundled one when it is strictly newer
+        newer = _stamp(card) > _stamp(old) if old and origin.startswith("live") else True
+        if not old or (newer and _stamp(card) >= _stamp(old)):
             cards[card["id"]] = dict(card, _origin=origin)
         return True
 
@@ -262,8 +316,11 @@ def parse_gh_range(text):
         op, v = m.group(1) or "=", m.group(2)
         if op == "=":
             versions.append(v)
-        elif op in (">=", ">"):
+        elif op == ">=":
             rng["introduced"] = v
+        elif op == ">":
+            rng["introduced"] = v
+            rng["introduced_exclusive"] = True
         elif op == "<":
             rng["fixed"] = v
         elif op == "<=":

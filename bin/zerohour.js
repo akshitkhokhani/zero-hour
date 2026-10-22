@@ -38,9 +38,9 @@ Usage:
       --card FILE            add a local incident card (repeatable)
       --offline              no network; cached intel and bundled cards only
       --no-remote-cards      do not fetch community cards from GitHub
-      --no-host              skip host IOC hunting
+      --no-host              only the project: skip this machine's runtimes, images, envs, IOCs, agent configs
       --github               also use the GitHub CLI (gh), if already authenticated
-      --all                  list every known incident, not only the ones that touch you
+      --all                  also show low-priority advisories (not exploited, low EPSS)
   zerohour pulse [--days N] [--format md|json]
                                           What is being exploited / new incident cards right now
   zerohour inventory [PATH]               Print the project inventory as JSON
@@ -73,11 +73,33 @@ function runInstall(args) {
   return typeof res.status === 'number' ? res.status : 3;
 }
 
+// Resolve an executable from PATH only. On Windows, process spawning also searches the
+// current directory, so a python.exe planted in the scanned project could otherwise run.
+function resolveFromPath(cmd) {
+  const path = require('path');
+  const fs = require('fs');
+  const cwd = fs.realpathSync(process.cwd());
+  const exts = IS_WIN ? (process.env.PATHEXT || '.EXE;.CMD;.BAT').split(';') : [''];
+  for (const dir of (process.env.PATH || '').split(path.delimiter)) {
+    if (!dir || dir === '.') continue;
+    let real;
+    try { real = fs.realpathSync(dir); } catch (_) { continue; }
+    if (real === cwd) continue;
+    for (const ext of exts) {
+      const cand = path.join(dir, cmd + ext);
+      try { if (fs.statSync(cand).isFile()) return cand; } catch (_) { /* not here */ }
+    }
+  }
+  return null;
+}
+
 function findPython() {
   const candidates = [['python3', []], ['python', []]];
   if (IS_WIN) candidates.push(['py', ['-3']]);
   const probe = 'import sys;print(sys.version_info[:2]>=(3,9))';
-  for (const [cmd, pre] of candidates) {
+  for (const [name, pre] of candidates) {
+    const cmd = resolveFromPath(name);
+    if (!cmd) continue;
     const res = spawnSync(cmd, [...pre, '-c', probe], { encoding: 'utf8', windowsHide: true });
     if (!res.error && res.status === 0 && String(res.stdout).trim() === 'True') {
       return [cmd, pre];

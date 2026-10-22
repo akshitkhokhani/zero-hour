@@ -1,0 +1,15 @@
+{
+  "name": "zero-hour",
+  "description": "zero-hour: is today's breach in your stack, and what do you do right now?",
+  "owner": {
+    "name": "Akshit Khokhani",
+    "url": "https://github.com/akshitkhokhani"
+  },
+  "plugins": [
+    {
+      "name": "zero-hour",
+      "source": "./",
+      "description": "Checks your project and machine against live security incidents and gives evidence-backed verdicts plus a safe, ordered fix list. Read-only by default."
+    }
+  ]
+}

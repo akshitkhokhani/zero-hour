@@ -1,0 +1,10 @@
+{
+  "name": "clean-app-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "zero-hour test fixture: nothing to see here",
+  "dependencies": {
+    "debug": "^4.3.7",
+    "is-number": "^7.0.0"
+  }
+}

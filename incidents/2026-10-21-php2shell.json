@@ -1,0 +1,210 @@
+{
+  "id": "2026-10-21-php2shell",
+  "title": "php2shell: pre-auth RCE in the PHP engine (CVE-2026-109618, CVE-2026-109619)",
+  "kind": "vulnerability",
+  "published": "2026-10-21",
+  "updated": "2026-10-22",
+  "severity": "critical",
+  "exploited": true,
+  "summary": "Two pre-auth remote code execution bugs in PHP itself (CVSSv4 9.2 each) hit PHP-FPM, Apache mod_php, php-cgi, FrankenPHP and LiteSpeed before any app code runs; exploitation is reported by Amazon, Cloudflare and watchTowr (CISA's early advisory said none was observed at publication), and 7.4-8.1 have no official fixed release.",
+  "cves": [
+    "CVE-2026-109618",
+    "CVE-2026-109619"
+  ],
+  "sources": [
+    {
+      "name": "Tenable FAQ",
+      "url": "https://www.tenable.com/blog/php2shell-cve-2026-109618-cve-2026-109619-frequently-asked-questions-about-critical-php-remote"
+    },
+    {
+      "name": "Recorded Future",
+      "url": "https://www.recordedfuture.com/blog/php2shell-vulnerability-exploitation"
+    },
+    {
+      "name": "NBC News",
+      "url": "https://www.nbcnews.com/tech/security/critical-vulnerabilities-php-update-systems-rcna604751"
+    }
+  ],
+  "notes": "CVE-2026-109618: out-of-memory corruption of partially initialized request data. CVE-2026-109619: use-after-free from stale global state across requests on the same worker (memory disclosure confirmed). mod_php is highest risk. Calif reports pre-auth RCE on WordPress, Drupal, Joomla and Magento. First exploitation attempts seen 2026-10-17. Distro/LTS vendors got patches early and may backport without changing the upstream version string, so check the vendor advisory before trusting a version-only verdict.",
+  "affected": [
+    {
+      "ecosystem": "runtime",
+      "name": "php",
+      "ranges": [
+        {
+          "introduced": "5.4.0",
+          "limit": "8.2.0",
+          "note": "5.4-7.3 EOL, no fix; 7.4-8.1 no official release (minimal source backports only) - check your distro/LTS vendor"
+        },
+        {
+          "introduced": "8.2.0",
+          "fixed": "8.2.35"
+        },
+        {
+          "introduced": "8.3.0",
+          "fixed": "8.3.36"
+        },
+        {
+          "introduced": "8.4.0",
+          "fixed": "8.4.27"
+        },
+        {
+          "introduced": "8.5.0",
+          "fixed": "8.5.12"
+        }
+      ],
+      "safe": "8.5.12 / 8.4.27 / 8.3.36 / 8.2.35, or a vendor-patched build"
+    }
+  ],
+  "preconditions": [
+    {
+      "id": "upload-progress",
+      "applies_to": "php",
+      "ini": "session.upload_progress.enabled",
+      "mitigated_if": [
+        "0",
+        "off",
+        "false",
+        ""
+      ],
+      "cve": "CVE-2026-109619",
+      "mitigation": "session.upload_progress.enabled=0"
+    },
+    {
+      "id": "memory-limit",
+      "applies_to": "php",
+      "ini": "memory_limit",
+      "mitigated_if": [
+        "-1"
+      ],
+      "cve": "CVE-2026-109618",
+      "mitigation": "memory_limit=-1 set so applications cannot override it (php_admin_value / php_admin_flag)"
+    },
+    {
+      "id": "fatal-error-backtraces",
+      "applies_to": "php",
+      "ini": "fatal_error_backtraces",
+      "mitigated_if": [
+        "0",
+        "off",
+        "false",
+        ""
+      ],
+      "cve": "CVE-2026-109619",
+      "mitigation": "fatal_error_backtraces=0 (PHP 8.5 only)"
+    }
+  ],
+  "iocs": {
+    "files": [],
+    "git": [],
+    "github_repos": [],
+    "network": [],
+    "strings": []
+  },
+  "remediation": [
+    {
+      "step": "Confirm the PHP version and SAPI that actually serves requests",
+      "when": "always",
+      "why": "Exposure depends on the web-serving PHP (FPM/mod_php/cgi), not the CLI on your laptop.",
+      "commands": {
+        "any": [
+          "php -v",
+          "php -i | grep -Ei 'Server API|session.upload_progress.enabled|memory_limit|fatal_error_backtraces'",
+          "docker compose exec <service> php -v",
+          "docker compose exec <service> php -i | grep -Ei 'Server API|upload_progress.enabled|memory_limit'"
+        ]
+      }
+    },
+    {
+      "step": "Isolate or shield internet-facing PHP apps until patched",
+      "when": "affected",
+      "why": "Exploitation is under way and bugs fire before app code; CERT-EU advises isolating exposed apps.",
+      "danger": "WAF rules (e.g. Cloudflare's) are a stopgap, not a fix.",
+      "commands": {
+        "any": [
+          "Put the site behind maintenance mode / IP allowlist, or enable your WAF's php2shell rules"
+        ]
+      }
+    },
+    {
+      "step": "Apply interim ini mitigations and restart ALL PHP workers",
+      "when": "affected",
+      "why": "Blocks the known triggers while you schedule the upgrade.",
+      "danger": "Settings only take effect after every worker restarts; container/cgroup memory limits are NOT a mitigation; these settings do not make PHP safe.",
+      "commands": {
+        "any": [
+          "; in php.ini (or FPM pool: php_admin_value[memory_limit] = -1)",
+          "memory_limit = -1",
+          "session.upload_progress.enabled = 0",
+          "fatal_error_backtraces = 0   ; PHP 8.5 only"
+        ],
+        "linux": [
+          "sudo systemctl restart php8.3-fpm   # match your version",
+          "sudo systemctl restart apache2   # mod_php"
+        ],
+        "darwin": [
+          "brew services restart php"
+        ]
+      }
+    },
+    {
+      "step": "Upgrade PHP to a fixed release",
+      "when": "affected",
+      "why": "The only complete fix: 8.5.12, 8.4.27, 8.3.36 or 8.2.35; older branches need a vendor build or a branch upgrade.",
+      "commands": {
+        "any": [
+          "Bump the FROM tag (e.g. php:8.3.36-fpm) then: docker compose build --pull && docker compose up -d",
+          "docker build --pull -t <image> ."
+        ],
+        "linux": [
+          "sudo apt-get update && apt list --upgradable 2>/dev/null | grep -i php",
+          "sudo dnf check-update 'php*'",
+          "Check your distro security tracker: backported fixes may keep the old version string"
+        ],
+        "darwin": [
+          "brew update && brew upgrade php"
+        ],
+        "windows": [
+          "Download the fixed build from https://windows.php.net/download/"
+        ]
+      }
+    },
+    {
+      "step": "Verify the fix where the code runs",
+      "when": "affected",
+      "why": "Proves the running workers, not just the image or package, are patched.",
+      "commands": {
+        "any": [
+          "docker compose exec <service> php -v",
+          "php -v",
+          "php -i | grep -Ei 'session.upload_progress.enabled|memory_limit'"
+        ]
+      }
+    },
+    {
+      "step": "Hunt for signs of exploitation since 2026-10-17",
+      "when": "affected",
+      "why": "Exploitation began before disclosure; a patched server can still carry a webshell.",
+      "danger": "If you find a webshell or unknown admin user, treat the host as compromised: contain first, then rotate DB and app secrets (wp-config.php, .env) from a clean machine.",
+      "commands": {
+        "linux": [
+          "find /var/www -name '*.php' -newermt 2026-10-17 -type f 2>/dev/null | head -50",
+          "grep -E '\" (POST) ' /var/log/apache2/access.log /var/log/nginx/access.log 2>/dev/null | tail -100"
+        ],
+        "any": [
+          "Review CMS admin users created since 2026-10-17"
+        ]
+      }
+    },
+    {
+      "step": "Get off end-of-life PHP",
+      "when": "always",
+      "why": "5.4-7.3 will never get a fix; 7.4-8.1 have no official release.",
+      "commands": {
+        "any": [
+          "Plan an upgrade to a supported branch (8.2+) or a vendor LTS with a published php2shell patch"
+        ]
+      }
+    }
+  ]
+}

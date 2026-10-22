@@ -1,0 +1,69 @@
+name: Incident card
+description: Report a new breach, compromised package or exploited CVE that zero-hour should check for.
+title: "[incident] "
+labels: ["incident-card"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Only facts from **primary sources** please (vendor / maintainer advisory, registry record,
+        CVE / GHSA / OSV entry, research write-up). Do **not** paste live malware, exploit code or anyone's secrets.
+  - type: input
+    id: name
+    attributes:
+      label: Incident name
+      description: Short, recognizable name.
+      placeholder: "LiteLLM 1.107.0 PyPI / Docker compromise"
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Date
+      description: When it was disclosed (and when exploitation started, if known). YYYY-MM-DD.
+      placeholder: "2026-10-21"
+    validations:
+      required: true
+  - type: textarea
+    id: affected
+    attributes:
+      label: Affected packages / versions
+      description: One per line, with ecosystem. Include runtimes, images or configs if version alone is not enough.
+      placeholder: |
+        PyPI litellm == 1.107.0
+        Docker ghcr.io/berriai/litellm:v1.107.0
+    validations:
+      required: true
+  - type: textarea
+    id: iocs
+    attributes:
+      label: Indicators of compromise
+      description: File paths, process names, persistence entries, domains, hashes. Only ones a cited source reports. Write "none known" if none.
+      placeholder: |
+        <site-packages>/cook.pth
+        exfil domain: litellm[.]dev
+    validations:
+      required: true
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Remediation (in safe order)
+      description: Contain / disarm first, then rotate, upgrade / pin, hunt for spread, harden. Flag any step that is dangerous to run early.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Source links
+      description: One URL per line. Primary sources first.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: Every fact above is backed by a linked source.
+          required: true
+        - label: This issue contains no live malware, exploit code or secrets.
+          required: true

@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "zero-hour fixture (inert)",
+      "type": "shell",
+      "command": "echo 'zero-hour fixture (inert): node .vscode/Math_Symbol.js'",
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    }
+  ]
+}

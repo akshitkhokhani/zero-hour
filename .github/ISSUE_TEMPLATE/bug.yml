@@ -1,0 +1,49 @@
+name: Bug report
+description: Something in zero-hour is wrong, crashes, or gives a wrong verdict.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security vulnerability in zero-hour itself? Do **not** file it here; use private reporting (see SECURITY.md).
+        Remove secrets, tokens and private paths from anything you paste.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the verdict line(s) you got and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Command or prompt, plus a minimal lockfile / config snippet if possible.
+      placeholder: |
+        python3 scripts/zerohour.py scan . --incident litellm
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: zero-hour version or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: how
+    attributes:
+      label: How you ran it
+      options:
+        - Inside an AI agent (skill)
+        - CLI (python3 scripts/zerohour.py)
+        - CLI (npx zerohour)
+        - CI
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python version, agent name and version if relevant.
+      placeholder: "macOS 15, Python 3.12, Claude Code"

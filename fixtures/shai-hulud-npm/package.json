@@ -1,0 +1,9 @@
+{
+  "name": "shai-hulud-npm-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "zero-hour test fixture: tensorlake pulled in transitively via some-sdk",
+  "dependencies": {
+    "some-sdk": "^1.0.0"
+  }
+}

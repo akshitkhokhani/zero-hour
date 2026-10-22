@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/akshitkhokhani/zero-hour/main/incidents/schema.json",
+  "title": "zero-hour incident card",
+  "description": "One security incident (supply-chain compromise or exploited vulnerability): what is affected, how to tell if you are hit, and the safe fix order.",
+  "type": "object",
+  "required": ["id", "title", "published", "summary", "sources", "affected", "remediation"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9][a-z0-9-]*$", "description": "YYYY-MM-DD-slug, matches the file name"},
+    "title": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["supply-chain-compromise", "vulnerability"]},
+    "published": {"$ref": "#/$defs/date"},
+    "updated": {"$ref": "#/$defs/date"},
+    "severity": {"enum": ["critical", "high", "medium"]},
+    "exploited": {"type": "boolean"},
+    "summary": {"type": "string", "minLength": 1, "description": "One plain-English sentence; mark uncertainty here"},
+    "notes": {"type": "string", "description": "Optional extra context that does not fit other fields"},
+    "cves": {"type": "array", "items": {"type": "string", "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$"}, "uniqueItems": true},
+    "sources": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["name", "url"],
+                "properties": {"name": {"type": "string"}, "url": {"type": "string", "pattern": "^https://"}}}
+    },
+    "affected": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/affected"}},
+    "preconditions": {"type": "array", "items": {"$ref": "#/$defs/precondition"}},
+    "iocs": {"$ref": "#/$defs/iocs"},
+    "remediation": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/step"},
+                    "description": "In safe order: contain/disarm, rotate secrets, upgrade/pin, hunt for spread, harden (NIST SP 800-61)"}
+  },
+  "$defs": {
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "os": {"type": "array", "items": {"enum": ["darwin", "linux", "windows"]}, "uniqueItems": true},
+    "range": {
+      "type": "object",
+      "properties": {
+        "introduced": {"type": "string"},
+        "fixed": {"type": "string"},
+        "last_affected": {"type": "string"},
+        "limit": {"type": "string"},
+        "note": {"type": "string"}
+      },
+      "anyOf": [{"required": ["introduced"]}, {"required": ["fixed"]}, {"required": ["last_affected"]}, {"required": ["limit"]}]
+    },
+    "affected": {
+      "type": "object",
+      "required": ["ecosystem", "name"],
+      "properties": {
+        "ecosystem": {"type": "string", "description": "OSV ecosystem (npm, PyPI, Packagist, Go, crates.io, RubyGems, Maven, NuGet, GitHub Actions), Docker, or runtime"},
+        "name": {"type": "string"},
+        "versions": {"type": "array", "items": {"type": "string"}},
+        "ranges": {"type": "array", "items": {"$ref": "#/$defs/range"}},
+        "tag_contains": {"type": "array", "items": {"type": "string"}},
+        "any_version": {"type": "boolean"},
+        "safe": {"type": "string"}
+      },
+      "anyOf": [{"required": ["versions"]}, {"required": ["ranges"]}, {"required": ["tag_contains"]}, {"required": ["any_version"]}]
+    },
+    "precondition": {
+      "type": "object",
+      "required": ["id", "applies_to", "mitigated_if"],
+      "properties": {
+        "id": {"type": "string"},
+        "applies_to": {"type": "string"},
+        "ini": {"type": "string"},
+        "mitigated_if": {"type": "array", "items": {"type": "string"}},
+        "cve": {"type": "string"},
+        "mitigation": {"type": "string"}
+      }
+    },
+    "file_ioc": {
+      "type": "object",
+      "required": ["path", "level"],
+      "properties": {
+        "path": {"type": "string", "description": "May use tokens {home} {project} {site-packages} {launch-agents} {systemd-user} {appdata}"},
+        "contains": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "level": {"enum": ["compromised", "review"]},
+        "meaning": {"type": "string"},
+        "os": {"$ref": "#/$defs/os"}
+      }
+    },
+    "iocs": {
+      "type": "object",
+      "properties": {
+        "files": {"type": "array", "items": {"$ref": "#/$defs/file_ioc"}},
+        "git": {"type": "array", "items": {"type": "object",
+                "properties": {"author_email": {"type": "string"}, "message_contains": {"type": "string"}, "meaning": {"type": "string"}},
+                "anyOf": [{"required": ["author_email"]}, {"required": ["message_contains"]}]}},
+        "github_repos": {"type": "array", "items": {"type": "object", "required": ["description_contains"],
+                "properties": {"description_contains": {"type": "string"}, "meaning": {"type": "string"}}}},
+        "network": {"type": "array", "items": {"type": "string"}},
+        "strings": {"type": "array", "items": {"type": "string"},
+                    "description": "Strings that, found in AI-agent config files, prove the campaign touched the repo"}
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["step"],
+      "properties": {
+        "step": {"type": "string"},
+        "when": {"enum": ["compromised", "affected", "always"]},
+        "why": {"type": "string"},
+        "danger": {"type": "string"},
+        "commands": {
+          "type": "object",
+          "properties": {
+            "darwin": {"type": "array", "items": {"type": "string"}},
+            "linux": {"type": "array", "items": {"type": "string"}},
+            "windows": {"type": "array", "items": {"type": "string"}},
+            "any": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

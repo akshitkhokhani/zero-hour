@@ -1,0 +1,29 @@
+{
+  "generated": "2026-10-22",
+  "cards": [
+    {
+      "file": "2026-10-21-php2shell.json",
+      "id": "2026-10-21-php2shell",
+      "title": "php2shell: pre-auth RCE in the PHP engine (CVE-2026-109618, CVE-2026-109619)",
+      "published": "2026-10-21",
+      "updated": "2026-10-22",
+      "severity": "critical"
+    },
+    {
+      "file": "2026-10-21-litellm-1-107-0.json",
+      "id": "2026-10-21-litellm-1-107-0",
+      "title": "LiteLLM 1.107.0 malicious release (PyPI + Docker) steals credentials via cook.pth",
+      "published": "2026-10-21",
+      "updated": "2026-10-22",
+      "severity": "critical"
+    },
+    {
+      "file": "2026-10-08-tensorlake-shai-hulud.json",
+      "id": "2026-10-08-tensorlake-shai-hulud",
+      "title": "tensorlake npm 0.5.144: Shai-Hulud-style worm with a token dead-man switch",
+      "published": "2026-10-08",
+      "updated": "2026-10-22",
+      "severity": "critical"
+    }
+  ]
+}

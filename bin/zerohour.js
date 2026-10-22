@@ -110,7 +110,7 @@ function findPython() {
 
 function runPython(args) {
   if (!fs.existsSync(SCRIPT)) {
-    console.error(`zero-hour: missing ${SCRIPT}. Reinstall the package (npx zerohour@latest) or clone the repo.`);
+    console.error(`zero-hour: missing ${SCRIPT}. Reinstall the package (npx @akshitkhokhani/zero-hour@latest) or clone the repo.`);
     return 3;
   }
   const py = findPython();
@@ -118,7 +118,7 @@ function runPython(args) {
     console.error(
       'zero-hour: Python 3.9+ was not found (tried python3, python' + (IS_WIN ? ', py -3' : '') + ').\n' +
       '  Install Python 3.9 or newer from https://www.python.org/downloads/ and run this again,\n' +
-      '  or use the zero-hour skill inside your AI agent (npx zerohour install): the agent can\n' +
+      '  or use the zero-hour skill inside your AI agent (npx @akshitkhokhani/zero-hour install): the agent can\n' +
       '  run the same checks by hand without Python.'
     );
     return 3;
